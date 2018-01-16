@@ -1,0 +1,149 @@
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<meta name="viewport" content="width=device-width,user-scalable=no, initial-scale=1"/> 
+    <title></title>
+    <link href="../Css/css.css" rel="stylesheet" type="text/css" />
+    <link href="../Css/load.css" rel="stylesheet" type="text/css" />
+
+    <style>.grid-stack
+        {
+            background: #F2F2E6;
+            margin-bottom:20px;
+        }        
+        
+        .grid-stack-item-content
+        {
+            background: #F2F2E6;
+            color: #2c3e50;
+            border:1px solid #48c3e9;
+        }
+        
+        .grid-stack .grid-stack .grid-stack-item-content
+        {
+            background: lightpink;
+        }
+        
+        .maskBar
+        {
+            text-align: left;
+            position: relative;
+            height: 40px;
+            left: 0;
+            top: 0px;
+            right: 0;
+            padding: 0px;
+            background-color: #d7d7d7;
+            z-index: 2;
+            color: #4e5d7c;
+        }
+        .maskBar img
+        {
+            margin: 8px;
+            width: 25px;
+            height: 25px;
+        }
+        .maskBar span
+        {
+            color: #4e5d7c;
+            font-weight: 600;
+            font-size: 18px;
+            position:absolute;
+            margin:9px;
+            
+        }
+        .grid-item-content
+        {
+  margin: 0;
+  position: absolute;
+  top: 40px;
+  left: 0px;
+  right: 1px;
+  bottom: 0px;
+  width: auto;
+  z-index: 0 !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+            }
+            
+            hr{border:1px solid #f7f7f7 }
+    </style>
+</head>
+<body style="height: 100%;margin:0px;background:#FFF;">
+<div id="loading" class="sk-three-bounce">
+    <div class="sk-child sk-bounce1"></div>
+    <div class="sk-child sk-bounce2"></div>
+    <div class="sk-child sk-bounce3"></div>
+</div>
+<div id="mainContainer" style="height: 100%;">
+</div>
+</body>
+</html>
+
+    <script src="../Public/jsTableToJson.js" type="text/javascript"></script>
+    <script src="../Config.js" type="text/javascript"></script>
+    <script src="../Public/json.js" type="text/javascript"></script>
+    <script src="../Public/jsTable.js" type="text/javascript"></script>
+    <script src="../Public/XMLHttp.js" type="text/javascript"></script>
+    <script src="../Public/array.js" type="text/javascript"></script>
+    <script src="../Public/UniformConfig.js" type="text/javascript"></script>
+    <script src="JQGlobal.js" type="text/javascript"></script>
+    <script src="../Public/DateFormat.js" type="text/javascript"></script>
+    <script src="datacake.js" type="text/javascript"></script>
+
+    <script src="../common.js" type="text/javascript"></script>
+    <script src="../Scripts/echartsjs/SampleReportModel.js" type="text/javascript"></script>
+    <script src="../Scripts/echartsjs/EchartsTran.js" type="text/javascript"></script>
+    
+    <script src="../Scripts/es/ESDBHelper.js" type="text/javascript"></script>
+    <script src="../Scripts/es/ESFun.js" type="text/javascript"></script>
+
+    <script src="../Scripts/mobileechartsjs/bars.js" type="text/javascript"></script>
+    <script src="../Scripts/mobileechartsjs/pies.js" type="text/javascript"></script>
+    <script src="../Scripts/mobileechartsjs/boxplot.js" type="text/javascript"></script>
+    <script src="../Scripts/mobileechartsjs/canvas.js" type="text/javascript"></script>
+    <script src="../Scripts/mobileechartsjs/Lines.js" type="text/javascript"></script>
+    <script src="../Scripts/mobileechartsjs/map.js" type="text/javascript"></script>
+    <script src="../Scripts/mobileechartsjs/mix.js" type="text/javascript"></script>
+    <script src="../Scripts/mobileechartsjs/other.js" type="text/javascript"></script>
+
+    <script src="../Scripts/echarts3.0/echarts.min.js" type="text/javascript"></script>
+    <script src="../Scripts/echarts3.0/china.js" type="text/javascript"></script>
+    <script src="../Scripts/echarts3.0/dataTool.js" type="text/javascript"></script>
+
+    <script src="../Scripts/jquery.min.js" type="text/javascript"></script>
+<script>
+
+    function connectToSwiftWebViewBridge(callback) {
+        if (window.SwiftWebViewBridge) {
+            callback(SwiftWebViewBridge);
+        } else {
+            document.addEventListener('SwiftWebViewBridgeReady',
+                                      function () {
+                                          callback(SwiftWebViewBridge);
+                                      },
+                                      false);
+        }
+    }
+
+    connectToSwiftWebViewBridge(function (bridge) {
+        bridge.init(function (message, responseCallback) {
+            responseCallback();
+        });
+    });
+
+
+    var objMobileDataCakeComponent = new MobileDataCakeComponent();
+    window.MyImagePath = "../Images/";
+    window.onload = function () {
+        objMobileDataCakeComponent.initPage();
+        var loadCtrl = document.getElementById("loading");
+        loadCtrl.style.display = "none";
+
+        window.setTimeout(function () { window.scrollTo(0, 0) }, 1);
+
+    }
+</script>
+
