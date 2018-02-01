@@ -141,7 +141,7 @@
     });
 
 
-    $(document).ready(function () {
+    $(document).ready(function (doFavorite) {
         alert("jquery====》document ready");
         var objMobileDataCakeComponent = new MobileDataCakeComponent();
         window.MyImagePath = "../Images/";
@@ -150,24 +150,7 @@
         var loadCtrl = document.getElementById("loading");
         loadCtrl.style.display = "none";
 
-//        doFavorite();
-
-
-        if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
-            SwiftWebViewBridge.callSwiftHandler("getUserInfo",
-                    "",
-                    function (responseData) {
-                        alert("login action in iOS start");
-//                    var Request = new Array()
-//                    Request.UserCode = responseData["Name"];
-//                    Request.UserPWD = responseData["Pwd"];
-//
-                        alert("login action in iOS end");
-//                    this._loginAction(Request);
-
-                    });
-        }
-
+        doFavorite();
 
         window.setTimeout(function () { window.scrollTo(0, 0) }, 1);
     });
