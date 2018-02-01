@@ -84,6 +84,7 @@
     <div id="mainContainer" style="height:100%">
     </div>
 
+<button type="button" onclick="doFavorite()">getUserInfo</button>
 </body>
 </html>
 
@@ -149,6 +150,14 @@
         var loadCtrl = document.getElementById("loading");
         loadCtrl.style.display = "none";
 
+        window.setTimeout(function () { window.scrollTo(0, 0) }, 1);
+
+
+    }
+
+    function doFavorite() {
+        alert("fffff");
+
         if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
             SwiftWebViewBridge.callSwiftHandler("getUserInfo",
                     "",
@@ -158,15 +167,11 @@
 //                    Request.UserCode = responseData["Name"];
 //                    Request.UserPWD = responseData["Pwd"];
 //
-//                    alert("login action in iOS end");
+                        alert("login action in iOS end");
 //                    this._loginAction(Request);
 
                     });
         }
-
-        window.setTimeout(function () { window.scrollTo(0, 0) }, 1);
-
-
     }
 
 </script>
