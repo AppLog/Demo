@@ -87,15 +87,17 @@ MobileDataCakeComponent.prototype.gethospitalIds = function () {
 
 MobileDataCakeComponent.prototype._doLogin = function (strUserCode, strPassword) {
 
+    alert("login action in iOS root");
     if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
         SwiftWebViewBridge.callSwiftHandler("getUserInfo",
             "",
             function (responseData) {
+                alert("login action in iOS start");
                 var Request = new Array()
                 Request.UserCode = responseData["Name"];
                 Request.UserPWD = responseData["Pwd"];
 
-                alert("login action in iOS");
+                alert("login action in iOS end");
                 this._loginAction(Request);
 
             });
