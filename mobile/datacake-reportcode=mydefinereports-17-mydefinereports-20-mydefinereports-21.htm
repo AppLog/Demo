@@ -141,19 +141,17 @@
     });
 
 
+    $(document).ready(function () {
+        alert("jquery====》document ready");
+        var objMobileDataCakeComponent = new MobileDataCakeComponent();
+        window.MyImagePath = "../Images/";
 
-
-    var objMobileDataCakeComponent = new MobileDataCakeComponent();
-    window.MyImagePath = "../Images/";
-    window.onload = function () {
         objMobileDataCakeComponent.initPage();
         var loadCtrl = document.getElementById("loading");
         loadCtrl.style.display = "none";
 
         window.setTimeout(function () { window.scrollTo(0, 0) }, 1);
-
-
-    }
+    });
 
     function doFavorite() {
         alert("fffff");
