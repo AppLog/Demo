@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="a95b2962-fe10-4bf4-9c20-7e3380a274ad" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mobile/datacake-reportcode=mydefinereports-17-mydefinereports-20-mydefinereports-21.htm" afterPath="$PROJECT_DIR$/mobile/datacake-reportcode=mydefinereports-17-mydefinereports-20-mydefinereports-21.htm" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mobile/datacake.js" afterPath="$PROJECT_DIR$/mobile/datacake.js" />
     </list>
     <ignored path="datacake.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -37,8 +36,8 @@
       <file leaf-file-name="datacake-reportcode=mydefinereports-17-mydefinereports-20-mydefinereports-21.htm" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/mobile/datacake-reportcode=mydefinereports-17-mydefinereports-20-mydefinereports-21.htm">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.7368421">
-              <caret line="134" column="0" selection-start-line="134" selection-start-column="0" selection-end-line="134" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.64912283">
+              <caret line="146" column="47" selection-start-line="146" selection-start-column="47" selection-end-line="146" selection-end-column="47" />
               <folding />
             </state>
           </provider>
@@ -47,8 +46,8 @@
       <file leaf-file-name="datacake.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mobile/datacake.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="164" column="79" selection-start-line="164" selection-start-column="79" selection-end-line="164" selection-end-column="79" />
+            <state vertical-scroll-proportion="-17.296297">
+              <caret line="116" column="5" selection-start-line="103" selection-start-column="4" selection-end-line="116" selection-end-column="5" />
               <folding>
                 <marker date="1517487638000" expanded="true" signature="12693:12767" placeholder="..." />
               </folding>
@@ -312,8 +311,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/mobile/datacake.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="164" column="79" selection-start-line="164" selection-start-column="79" selection-end-line="164" selection-end-column="79" />
+        <state vertical-scroll-proportion="-17.296297">
+          <caret line="116" column="5" selection-start-line="103" selection-start-column="4" selection-end-line="116" selection-end-column="5" />
           <folding>
             <marker date="1517487638000" expanded="true" signature="12693:12767" placeholder="..." />
           </folding>
@@ -322,8 +321,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/mobile/datacake-reportcode=mydefinereports-17-mydefinereports-20-mydefinereports-21.htm">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.7368421">
-          <caret line="134" column="0" selection-start-line="134" selection-start-column="0" selection-end-line="134" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.64912283">
+          <caret line="146" column="47" selection-start-line="146" selection-start-column="47" selection-end-line="146" selection-end-column="47" />
           <folding />
         </state>
       </provider>

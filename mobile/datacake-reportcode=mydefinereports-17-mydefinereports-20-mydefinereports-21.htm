@@ -121,18 +121,41 @@
     <script src="../Scripts/jquery.min.js" type="text/javascript"></script>
 <script>
 
+    function connectToSwiftWebViewBridge(callback) {
+        if (window.SwiftWebViewBridge) {
+            callback(SwiftWebViewBridge);
+        } else {
+            document.addEventListener('SwiftWebViewBridgeReady',
+                                      function () {
+                                          callback(SwiftWebViewBridge);
+                                      },
+                                      false);
+        }
+    }
 
-
-
-    var objMobileDataCakeComponent = new MobileDataCakeComponent();
-
-
-    objMobileDataCakeComponent.connectToSwiftWebViewBridge(function (bridge) {
+    connectToSwiftWebViewBridge(function (bridge) {
         bridge.init(function (message, responseCallback) {
             responseCallback();
         });
     });
 
+    if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
+        SwiftWebViewBridge.callSwiftHandler("getUserInfo",
+                "",
+                function (responseData) {
+                    alert("login action in iOS start");
+//                    var Request = new Array()
+//                    Request.UserCode = responseData["Name"];
+//                    Request.UserPWD = responseData["Pwd"];
+//
+//                    alert("login action in iOS end");
+//                    this._loginAction(Request);
+
+                });
+    }
+
+
+    var objMobileDataCakeComponent = new MobileDataCakeComponent();
     window.MyImagePath = "../Images/";
     window.onload = function () {
         objMobileDataCakeComponent.initPage();
