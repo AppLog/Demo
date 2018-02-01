@@ -86,11 +86,30 @@ MobileDataCakeComponent.prototype.gethospitalIds = function () {
 }
 
 MobileDataCakeComponent.prototype._doLogin = function (strUserCode, strPassword) {
-    var Request = new Array()
 
-    Request.UserCode = this.getUserCode();
-    Request.UserPWD = this.getUserPWD();
+    if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
+        SwiftWebViewBridge.callSwiftHandler("getUserInfo",
+            "",
+            function (responseData) {
+                var Request = new Array()
+                Request.UserCode = responseData["Name"];
+                Request.UserPWD = responseData["Pwd"];
 
+                loginAction(Request);
+                alert("login action in iOS");
+            });
+    }
+    else {
+        var Request = new Array()
+        Request.UserCode = this.getUserCode();
+        Request.UserPWD = this.getUserPWD();
+
+        loginAction(Request);
+        alert("login action in Web");
+    }
+}
+
+MobileDataCakeComponent.prototype.loginAction = function(Request) {
     if(Request.UserCode == undefined || Request.UserCode == "")
     {
         Request.UserCode="admin";
@@ -120,7 +139,6 @@ MobileDataCakeComponent.prototype._doLogin = function (strUserCode, strPassword)
     var date = new Date();
     date.setTime(date.getTime() + (12 * 60 * 60 * 1000)); //12个小时失效
     //$.cookie('myDataBriefCookie', objString, { expires: date, path: '/' });
-
 }
 
 
