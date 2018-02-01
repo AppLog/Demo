@@ -36,8 +36,8 @@
       <file leaf-file-name="datacake-reportcode=mydefinereports-17-mydefinereports-20-mydefinereports-21.htm" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mobile/datacake-reportcode=mydefinereports-17-mydefinereports-20-mydefinereports-21.htm">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-61.0">
-              <caret line="171" column="9" selection-start-line="121" selection-start-column="0" selection-end-line="171" selection-end-column="9" />
+            <state vertical-scroll-proportion="-7.875">
+              <caret line="146" column="33" selection-start-line="146" selection-start-column="4" selection-end-line="146" selection-end-column="33" />
               <folding />
             </state>
           </provider>
@@ -46,7 +46,7 @@
       <file leaf-file-name="Test.html" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/mobile/Test.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.80263156">
+            <state vertical-scroll-proportion="0.7368421">
               <caret line="49" column="0" selection-start-line="49" selection-start-column="0" selection-end-line="49" selection-end-column="0" />
               <folding />
             </state>
@@ -354,15 +354,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/mobile/datacake-reportcode=mydefinereports-17-mydefinereports-20-mydefinereports-21.htm">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-61.0">
-          <caret line="171" column="9" selection-start-line="121" selection-start-column="0" selection-end-line="171" selection-end-column="9" />
+        <state vertical-scroll-proportion="-7.875">
+          <caret line="146" column="33" selection-start-line="146" selection-start-column="4" selection-end-line="146" selection-end-column="33" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/mobile/Test.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.80263156">
+        <state vertical-scroll-proportion="0.7368421">
           <caret line="49" column="0" selection-start-line="49" selection-start-column="0" selection-end-line="49" selection-end-column="0" />
           <folding />
         </state>
