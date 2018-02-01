@@ -104,12 +104,12 @@ MobileDataCakeComponent.prototype._doLogin = function (strUserCode, strPassword)
         Request.UserCode = this.getUserCode();
         Request.UserPWD = this.getUserPWD();
 
-        loginAction(Request);
+        this._loginAction(Request);
         alert("login action in Web");
     }
 }
 
-MobileDataCakeComponent.prototype.loginAction = function(Request) {
+MobileDataCakeComponent.prototype._loginAction = function(Request) {
     if(Request.UserCode == undefined || Request.UserCode == "")
     {
         Request.UserCode="admin";
