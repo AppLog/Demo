@@ -95,8 +95,9 @@ MobileDataCakeComponent.prototype._doLogin = function (strUserCode, strPassword)
                 Request.UserCode = responseData["Name"];
                 Request.UserPWD = responseData["Pwd"];
 
-                this._loginAction(Request);
                 alert("login action in iOS");
+                this._loginAction(Request);
+
             });
     }
     else {
@@ -104,8 +105,9 @@ MobileDataCakeComponent.prototype._doLogin = function (strUserCode, strPassword)
         Request.UserCode = this.getUserCode();
         Request.UserPWD = this.getUserPWD();
 
-        this._loginAction(Request);
         alert("login action in Web");
+        this._loginAction(Request);
+
     }
 }
 
