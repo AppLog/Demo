@@ -4,10 +4,16 @@ window.nReportEndDate = "";
 window.nShowTitleStartDate = "";
 window.nShowTitleEndDate = "";
 
+window.nowDate = new Date();
+
+window.nNeedCloseLoyer = 0;
+window.nNeedLoadCount = 0;
+window.nCompleteLoadCount = 0;
 
 var EchartsTran = {};
 
 EchartsTran.showReport = function (reportarr) {
+    window.nNeedLoadCount++;
     if (isMyDefineCode(reportarr.code)) {
         //加载用户自定义报表
         this.showMyDefineReport(reportarr);
@@ -137,6 +143,10 @@ EchartsTran.buildReportEchartsByData = function (Request, reportarr, Return) {
 }
 
 EchartsTran.Builder = function (reportarr, _tableData, elementid) {
+    //alert(elementid + "数据获取完成，Builder生成图表：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+    //console.log(elementid + "数据获取完成，Builder生成图表：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+    //window.nowDate = new Date();
+
     var nOptionAtt = new OptionAtt();
     nOptionAtt.backgroundColor = window._webconfig.backgroundColor;
     nOptionAtt.color = window._webconfig.color;
@@ -241,8 +251,6 @@ EchartsTran.Builder = function (reportarr, _tableData, elementid) {
             tmpdata.push(_tableData[i]);
         }
     }
-    var isregister = 1;
-    //var isregister = this.isRegister();
 
     var option = this.TranOption(tmpdata, nOptionAtt);
 
@@ -254,10 +262,6 @@ EchartsTran.Builder = function (reportarr, _tableData, elementid) {
     }
     else if (option == "canvas" || option == "other") {
         var e = document.getElementById(elementid);
-        if (isregister == 0) {
-            var div = '<div style="text-align:center;"><img src="../Images/register.png" /></div>';
-            $("#" + elementid).html($("#" + elementid).html() + div);
-        }
     }
     else {
         if (option.length > 1) {
@@ -270,19 +274,6 @@ EchartsTran.Builder = function (reportarr, _tableData, elementid) {
             e.style.overflowY = "auto";
             $(e).html("");
             for (var i = 0; i < option.length; i++) {
-                if (isregister == 0) {
-                    option[i].graphic = { // 将图片定位到最下方的中间：
-                        type: 'image',
-                        left: 'center', // 水平定位到中间
-                        bottom: '10%',  // 定位到距离下边界 10% 处
-                        z: 10,
-                        style: {
-                            image: '../images/register.png',
-                            width: 200,
-                            height: 35
-                        }
-                    };
-                }
                 var newElement = document.createElement("div");
                 newElement.style.height = '310px';
                 if (option[i].xAxis.data.length > 15) {
@@ -299,19 +290,6 @@ EchartsTran.Builder = function (reportarr, _tableData, elementid) {
             }
         }
         else {
-            if (isregister == 0) {
-                option.graphic = { // 将图片定位到最下方的中间：
-                    type: 'image',
-                    left: 'center', // 水平定位到中间
-                    bottom: '5%',  // 定位到距离下边界 10% 处
-                    z: 10,
-                    style: {
-                        image: '../images/register.png',
-                        width: 200,
-                        height: 35
-                    }
-                };
-            }
             if (nOptionAtt.report.echartType == "bar002" || nOptionAtt.report.echartType == "bar005") {
                 //条形图 高度自适应并且加DIV边框
                 var e = document.getElementById(elementid);
@@ -380,20 +358,18 @@ EchartsTran.Builder = function (reportarr, _tableData, elementid) {
                     table.innerHTML = tablestr;
                 }
                 else {
-                    var e = document.getElementById(elementid);
+                    var e = document.getElementById("echartdiv" + elementid);
                     //                    e.style.overflowY = "hidden";
-                    $(e).html("");
-                    var newElement = document.createElement("div");
-                    e.appendChild(newElement);
-                    $(newElement).height('100%');
-                    if ($(newElement).height() <= 100) {
-                        $(newElement).height(310);
-                    }
+                    //$(e).html("");
+                    //var newElement = e.children[0];
                     //                    alert($(newElement).height());
-                    var myChart = echarts.init(newElement);
+                    //var myChart = echarts.init(newElement);
+                    //myChart.dispose();
+                    var myChart = echarts.init(e);
                     // ajax callback
-                    myChart.hideLoading();
+                    //myChart.hideLoading();
                     myChart.setOption(option, true);
+                    myChart.hideLoading();
 
                     if (reportarr.isClickDetail) {
                         myChart.on('click', function (params) {
@@ -423,6 +399,12 @@ EchartsTran.Builder = function (reportarr, _tableData, elementid) {
                 }
             }
         }
+    }
+    window.nCompleteLoadCount++;
+
+    if(window.nNeedCloseLoyer > 0 && window.nNeedLoadCount <= window.nCompleteLoadCount)
+    {
+        top.layer.close(window.nNeedCloseLoyer);
     }
 }
 
@@ -1088,7 +1070,7 @@ EchartsTran.TranOption = function (data, optionatt) {
 EchartsTran.isRegister = function () {
     var isregister = 0;
     var reportarr = {};
-    reportarr.DataSource = "datacake/sysinfo";
+    reportarr.DataSource = "datacake/sys_registerinfo";
     reportarr.dataSourceType = "ES";
     reportarr.dataResultFormat = "JSON";
     var _tableDataDetails = ESFun.getMyDetailDefineDataNoDefine(reportarr, null, null, "", "", "", "");

@@ -8,21 +8,19 @@ window._webconfig = {};
 
 //应用服务器地址
 window._webconfig._sysLocation = window.location.protocol + "//" + window.location.host;
-var _sysHost = window._webconfig._sysLocation + "/DataCakeNewApp/";
+var _sysHost = window._webconfig._sysLocation + "/DataCakeApp/";
 
 //ES 应用服务器地址
 var _sysHost1 = window.location.protocol + "//" + window.location.hostname + ":9200/";
 
-window._webconfig._addressServerName = _sysHost;
-//多数据库 应用服务器地址
+window._webconfig._addressServerName = _sysHost; 
+//ES数据库 应用服务器地址
 window._webconfig._addressESServerName = _sysHost1; 
-//统计服务器地址
-window._webconfig._addressStatServerName = _sysHost;
 
 //开始日期
-window._webconfig.nStartDate = "2017-12-16";
+window._webconfig.nStartDate = "2017-12-15";
 //结束日期
-window._webconfig.nEndDate = "2017-12-16";
+window._webconfig.nEndDate = "2017-12-15";
 
 //开始日期
 window._webconfig.nWeekStartDate = "2017-12-11";
@@ -48,6 +46,17 @@ window._webconfig._sysDataType = "JSTABLE";
 window._webconfig.backgroundColor = "#FFFFFF"; //#F2F2E6
 //图表色系
 
+//window._webconfig.color = [
+//            "#0026ff", 
+//            "#eb0b1b",
+//            "#088a03",
+//            "#ffd000",
+//            "#000000",
+//            "#8e0091",
+//            "#00ffe1",
+//            "#ab5212",
+//            "#6e5d5d",
+//            "#820909"];
 window._webconfig.color = ["#0091a2",
             "#b63589",
             "#ea6602",
@@ -82,8 +91,6 @@ window._webconfig.mobilesubtextStyle = "#E877A3";
 //ES中聚合函数返回的数据记录条数
 window._webconfig.ESReturnCount = 10000;
 
-window._webconfig.avgValue = 100;
-
 window._webconfig.systemuserid = 1;
 window._webconfig.systemusercode = "system";
 
@@ -94,13 +101,13 @@ window._webconfig.usecount = 5;
 //过滤器配置
 window._webconfig.table_filter_collection = [
 //    //表名                  过滤器名                数据类型                查询字段                             编码                         过滤器查询条件字段        过滤器查询条件字段类型
-   ["BSC_Hospital",        "医院",           "Enum",             ["HospitalCode", "HospitalName"],         "HospitalSearch",             "HospitalCode",           "number"]
+ //  ["BSC_Hospital",        "医院",           "Enum",             ["HospitalCode", "HospitalName"],         "HospitalSearch",             "HospitalCode",           "string"],
 //    ["bsc_instrument",      "仪器",           "Enum",             ["InstrumentID", "InstrumentName"],     "InstrumentSearch",         "InstrumentID",          "number"],
 //    ["bsc_testitem",        "测试项目",           "Enum",         ["TestItemID", "TestItemName"],         "TestItemSearch",               "TestItemID",          "number"],
 //    ["bsc_patienttype",     "病人类型",           "Enum",         ["PatientTypeID", "PatientTypeName"],   "PatientTypeSearch",            "PatientTypeID",          "number"],
 //    ["bsc_priorityflag",    "样本优先级",           "Enum",        ["PriorityID", "PriorityName"],         "PrioritySearch",               "PriorityID",          "number"],
 //    ["BSC_SexType",         "性别",                "Enum",          ["SexID", "SexName"],                   "SexSearch",                    "SexID",          "number"],
- //   ["bsc_speciality_classify", "专业类别",           "Enum",     ["SpecialityClassifyID","SpecialityClassifyName"], "SpecialitySearch", "SpecialityClassifyID",          "number"],
+//    ["bsc_speciality_classify", "专业类别",           "Enum",     ["SpecialityClassifyID","SpecialityClassifyName"], "SpecialitySearch", "SpecialityClassifyID",          "number"],
 //    ["BSC_Ward",            "申请科室",           "Enum",          ["WardID", "WardName"],                "WardSearch",                       "WardID",          "number"],
 //    ["BSC_SampleType",      "样本类型",            "Enum",        ["SampleTypeID", "SampleTypeName"],         "SampleTypeSearch",             "SampleTypeID" ,         "number"],
 //    ["BSC_SampleState",     "样本状态",             "List",     [[400, "已登记"], [420, "IOM"], [401, "已编程"], [410, "测试中"], [500, "已完成"], [800, "已上传"]],   "SampleStateSearch",    "SampleState",  "number"],

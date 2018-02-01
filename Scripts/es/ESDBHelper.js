@@ -24,27 +24,39 @@ ESDBHelper.getMyJsonDataByRequest = function (Request, reportarr) {
     }
     else {
         if (tooks.aggregations.result == undefined) {
+            var nDataItem = {};
             //单纯返回一个数量 没有其他数据
             if (tooks.aggregations[reportarr.FunCol1].value != undefined) {
                 var count = tooks.aggregations[reportarr.FunCol1].value;
-                var nDataItem = {};
                 var nItemName = reportarr.FunCol1;
                 nDataItem.ItemName = nItemName;
                 nDataItem.ItemCount = count;
-                _tableData.push(nDataItem);
             }
             //单纯返回一组数量 没有其他数据
             if (tooks.aggregations[reportarr.FunCol1].values != undefined) {
                 var values = tooks.aggregations[reportarr.FunCol1].values;
-                var jsonobj = JSON.stringify(values).trimEnd("}").split(":");
-                var count = parseInt(jsonobj[1]);
-                var nDataItem = {};
+                var jsonobj = JSON.stringify(values).trimEnd("}").replace("{","").split(",");
+
                 var nItemName = reportarr.FunCol1;
                 nDataItem.ItemName = nItemName;
-                nDataItem.ItemCount = count;
-                _tableData.push(nDataItem);
+                nDataItem.Percentiles = new Array();
+                for (var j = 0; j < jsonobj.length; j++) {
+                    var valueobj = jsonobj[j].split(":");
+                    var count = parseInt(valueobj[1]);
+                    nDataItem.Percentiles.push(count);
+                }
             }
-
+            if (reportarr.FunCol2 != undefined && reportarr.FunCol2 != "") {//第二个函数
+                if (reportarr.FunCol2 == "count") {
+                    value = tooks.hits.total;
+                    nDataItem.ItemValue = value;
+                }
+                else {
+                    value = tooks.aggregations[reportarr.FunCol2].value;
+                    nDataItem.ItemValue = value;
+                }
+            }
+            _tableData.push(nDataItem);
         }
         else {
             if (tooks.aggregations.result.buckets != undefined) {
@@ -62,20 +74,37 @@ ESDBHelper.getMyJsonDataByRequest = function (Request, reportarr) {
                             if (reportarr.FunCol1 != undefined && reportarr.FunCol1 != "") {//第一个函数
                                 if (reportarr.FunCol1 == "count") {
                                     count = bucket.doc_count;
+                                    nDataItem.ItemCount = count;
                                 }
                                 else {
-                                    count = bucket[reportarr.FunCol1].value;
+                                    if (bucket[reportarr.FunCol1].value != undefined) {
+                                        count = bucket[reportarr.FunCol1].value;
+                                        nDataItem.ItemCount = count;
+                                    }
+
+                                    //返回百分比
+                                    if (bucket[reportarr.FunCol1].values != undefined) {
+                                        var values = bucket[reportarr.FunCol1].values;
+                                        var jsonobj = JSON.stringify(values).trimEnd("}").replace("{", "").split(",");
+
+                                        nDataItem.Percentiles = new Array();
+                                        for (var j = 0; j < jsonobj.length; j++) {
+                                            var valueobj = jsonobj[j].split(":");
+                                            var count = parseInt(valueobj[1]);
+                                            nDataItem.Percentiles.push(count);
+                                        }
+                                    }
                                 }
-                                nDataItem.ItemCount = count;
                             }
                             if (reportarr.FunCol2 != undefined && reportarr.FunCol2 != "") {//第二个函数
                                 if (reportarr.FunCol2 == "count") {
                                     value = bucket.doc_count;
+                                    nDataItem.ItemValue = value;
                                 }
                                 else {
                                     value = bucket[reportarr.FunCol2].value;
+                                    nDataItem.ItemValue = value;
                                 }
-                                nDataItem.ItemValue = value;
                             }
                             _tableData.push(nDataItem);
                         }

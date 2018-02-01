@@ -15,7 +15,7 @@ JQGlobal._userInfo = undefined;
 //获取 登录用户连接序列号
 JQGlobal.getConnectSequence = function () {
     //var myDataBriefCookie = $.cookie('myDataBriefCookie');
-    var myDataBriefCookie = window.UserLoginObj;
+    var myDataBriefCookie = JSON.parse(window.localStorage.getItem("UserLoginObj"));
     if (myDataBriefCookie == undefined || myDataBriefCookie == "") {
         window.parent.location.href = "../login.htm";
         return;
@@ -28,7 +28,7 @@ JQGlobal.getConnectSequence = function () {
 //获取 登录用户代码
 JQGlobal.getUserCode = function () {
     //var myDataBriefCookie = $.cookie('myDataBriefCookie');
-    var myDataBriefCookie = window.UserLoginObj;
+    var myDataBriefCookie = JSON.parse(window.localStorage.getItem("UserLoginObj"));
     if (myDataBriefCookie == undefined || myDataBriefCookie == "") {
         window.parent.location.href = "../login.htm";
         return;
@@ -39,7 +39,7 @@ JQGlobal.getUserCode = function () {
 //获取 登录用户ID
 JQGlobal.getUserID = function () {
     //var myDataBriefCookie = $.cookie('myDataBriefCookie');
-    var myDataBriefCookie = window.UserLoginObj;
+    var myDataBriefCookie = JSON.parse(window.localStorage.getItem("UserLoginObj"));
     if (myDataBriefCookie == undefined || myDataBriefCookie == "") {
         window.parent.location.href = "../login.htm";
         return;
@@ -50,7 +50,7 @@ JQGlobal.getUserID = function () {
 //获取 登录用户名
 JQGlobal.getUserName = function () {
     //var myDataBriefCookie = $.cookie('myDataBriefCookie');
-    var myDataBriefCookie = window.UserLoginObj;
+    var myDataBriefCookie = JSON.parse(window.localStorage.getItem("UserLoginObj"));
     if (myDataBriefCookie == undefined || myDataBriefCookie == "") {
         window.parent.location.href = "login.htm";
         return null;
@@ -134,6 +134,40 @@ JQGlobal._dataSourceFilterValue = [];
 JQGlobal._dictType = [];
 //数据字典值
 JQGlobal._dictInfo = [];
+//用户自定义报表列表
+JQGlobal._defineData = [];
+//用户自定义函数列表
+JQGlobal._funData = [];
+//用户自定义报表查询条件列表
+JQGlobal._conditionData = [];
+
+JQGlobal.getDefineData = function (reportcode) {
+    for (var i = 0; i < JQGlobal._defineData.length; i++) {
+        if (JQGlobal._defineData[i].DefineID == parseInt(reportcode)) {
+            return JQGlobal._defineData[i];
+        }
+    }
+}
+
+JQGlobal.getFunData = function (funid1, funid2) {
+    var _funs = new Array();
+    JQGlobal._funData.forEach(function (value, index, array) {
+        if (value.FunID == funid1 || value.FunID == funid2) {
+            _funs.push(value);
+        }
+    });
+    return _funs;
+}
+
+JQGlobal.getConditionData = function (DefineID) {
+    var _conditions = new Array();
+    JQGlobal._conditionData.forEach(function (value, index, array) {
+        if (value.DefineID == DefineID) {
+            _conditions.push(value);
+        }
+    });
+    return _conditions;
+}
 
 ////////////////////////////////////////////////////////////
 //获取服务器的地址

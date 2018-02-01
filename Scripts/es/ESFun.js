@@ -3,24 +3,31 @@ var ESFun = {};
 
 //ES自定义报表数据处理
 ESFun.getMyDefineData = function (reportarr) {
-    var objRequest = new Array();
-    objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
-    objRequest.ParameterNames = ["defineId"];
-    objRequest.ParameterDataTypes = ["int"];
-    objRequest.ParameterValues = [reportarr.CurDefineID];
-    var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
+    //var objRequest = new Array();
+    //objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
+    //objRequest.ParameterNames = ["defineId"];
+    //objRequest.ParameterDataTypes = ["int"];
+    //objRequest.ParameterValues = [reportarr.CurDefineID];
+    //var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
 
-    var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
-    var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
-    var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+    //var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
+    //var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
+    //var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+
+    var m_nDefineData = top.JQGlobal.getDefineData(getMyDefineIDByCode(reportarr.code)); //自定义数据列表
+    var m_nFunData = top.JQGlobal.getFunData(m_nDefineData.DataCol, m_nDefineData.DataCol2); //度量函数列表
+    var m_nConditionData = top.JQGlobal.getConditionData(m_nDefineData.DefineID); //度量函数列表
+
     reportarr.ReportParent1 = m_nDefineData.ReportParent1;
     reportarr.ReportParent2 = m_nDefineData.ReportParent2;
+    //有选中使用列转行计算函数或者统计数量
     if (reportarr.isTAT || reportarr.isSampleCount) {
         var isInstrumentOrSpecialityclassify = 0;
         if (m_nDefineData.DataItem.toLowerCase() == "instrumentname" || m_nDefineData.DataItem.toLowerCase() == "specialityclassifyname"
                                 || m_nDefineData.DataRow.toLowerCase() == "instrumentname" || m_nDefineData.DataRow.toLowerCase() == "specialityclassifyname") {
             isInstrumentOrSpecialityclassify = 1;
         }
+        //有选中计算函数中的项
         if (reportarr.TATValues != undefined && reportarr.TATValues.length > 0) {
             //直接使用ES函数来统计 TAT
             var _nResultData = new Array();
@@ -35,7 +42,10 @@ ESFun.getMyDefineData = function (reportarr) {
                 groupfield = m_nDefineData.DataItem;
                 groupfieldtype = m_nDefineData.DataItemType;
             }
+            
             if (groupfield != "") {
+                //有选择项目或者行排序
+
                 //查询单个字段的数据字典
                 var _tableData = this.getESDataByFieldDistinct(m_nDefineData, m_nConditionData, m_nFunData, reportarr, groupfield, groupfieldtype);
                 var _ndataDict = new Array();
@@ -76,14 +86,14 @@ ESFun.getMyDefineData = function (reportarr) {
                             if (reportarr.tatMinValue != undefined && reportarr.tatMinValue > 0) {
                                 var nDataSelectCondition = {};
                                 nDataSelectCondition.DataSelectName = n_newDefineData.DataRow;
-                                nDataSelectCondition.DataSelectOption = ">";
+                                nDataSelectCondition.DataSelectOption = ">=";
                                 nDataSelectCondition.DataSelectValue = reportarr.tatMinValue;
                                 nDataSelectConditions.push(nDataSelectCondition);
                             }
                             if (reportarr.tatMaxValue != undefined && reportarr.tatMaxValue > 0) {
                                 var nDataSelectCondition = {};
                                 nDataSelectCondition.DataSelectName = n_newDefineData.DataRow;
-                                nDataSelectCondition.DataSelectOption = "<";
+                                nDataSelectCondition.DataSelectOption = "<=";
                                 nDataSelectCondition.DataSelectValue = reportarr.tatMaxValue;
                                 nDataSelectConditions.push(nDataSelectCondition);
                             }
@@ -122,7 +132,12 @@ ESFun.getMyDefineData = function (reportarr) {
                                     _item.ItemName = _nTatSet.TATName; // + reportarr.TATValues[k]
                                     _item.XValue = _ndataDict[i];
                                 }
-                                _item.ItemCount = _newtableData[d].ItemCount;
+                                if (_newtableData[d].ItemCount) {
+                                    _item.ItemCount = _newtableData[d].ItemCount;
+                                }
+                                if (_newtableData[d].Percentiles && _newtableData[d].Percentiles.length > 0) {
+                                    _item.ItemCount = _newtableData[d].Percentiles[0];
+                                }
                                 _nResultData.push(_item);
                             }
                         }
@@ -130,78 +145,400 @@ ESFun.getMyDefineData = function (reportarr) {
                 }
             }
             else {
+                //没有选择项目或者行 直接按设置的列转行进行统计
+                var n_newDefineData = {};
+
+                n_newDefineData.DataSource = m_nDefineData.DataSource;
+
+                for (var j = 0; j < reportarr.TATSet.length; j++) {
+                    //按配置的TAT字段循环
+                    var _nTatSet = reportarr.TATSet[j];
+                    for (var k = 0; k < reportarr.TATValues.length; k++) {
+                        //有设置时间列 按时间列group by
+                        var nDataRow = "";
+                        var nDataRowOrder = 0;
+                        var nDataRowType = "";
+                        if (_nTatSet.TATHour) {
+                            nDataRow = _nTatSet.TATHour;
+                            n_newDefineData.DataRow = _nTatSet.TATHour; //取TAT的字段
+                        }
+
+                        //取设置的是什么值 10百分位 25百分位等
+                        var _funDatas = [];
+                        var nFunData = {};
+                        nFunData.FunType = reportarr.TATValues[k];
+                        nFunData.FunField = _nTatSet.TATTimer;
+                        n_newDefineData.DataCol = 1;
+                        nFunData.FunID = 1;
+                        _funDatas.push(nFunData);
+                        if (reportarr.isSampleCount) {
+                            var nFunData = {};
+                            nFunData.FunType = 2;
+                            nFunData.FunField = _nTatSet.TATTimer;
+                            n_newDefineData.DataCol2 = 2;
+                            nFunData.FunID = 2;
+                            _funDatas.push(nFunData);
+                        }
+
+                        var _newtableData = undefined;
+                        var nDataSelectConditions = [];
+                        if (reportarr.tatMinValue != undefined && reportarr.tatMinValue > 0) {
+                            var nDataSelectCondition = {};
+                            nDataSelectCondition.DataSelectName = n_newDefineData.DataRow;
+                            nDataSelectCondition.DataSelectOption = ">=";
+                            nDataSelectCondition.DataSelectValue = reportarr.tatMinValue;
+                            nDataSelectConditions.push(nDataSelectCondition);
+                        }
+                        if (reportarr.tatMaxValue != undefined && reportarr.tatMaxValue > 0) {
+                            var nDataSelectCondition = {};
+                            nDataSelectCondition.DataSelectName = n_newDefineData.DataRow;
+                            nDataSelectCondition.DataSelectOption = "<=";
+                            nDataSelectCondition.DataSelectValue = reportarr.tatMaxValue;
+                            nDataSelectConditions.push(nDataSelectCondition);
+                        }
+                        _newtableData = this.getESData(n_newDefineData, m_nConditionData, _funDatas, reportarr, nDataRow, nDataRowOrder, nDataRowType, 0, nDataSelectConditions);
+                        
+                        for (var d = 0; d < _newtableData.length; d++) {
+                            var _item = {};
+                            _item.ItemName = "";
+                            _item.XValue = "";
+                            _item.ItemCount = "";
+                            _item.ItemName = _nTatSet.TATName; // + reportarr.TATValues[k]
+                            if (_nTatSet.TATHour)
+                            {
+                                _item.XValue = _newtableData[d].ItemName;
+                            }
+                            if (_newtableData[d].ItemCount) {
+                                _item.ItemCount = _newtableData[d].ItemCount;
+                            }
+                            if (_newtableData[d].ItemValue) {
+                                _item.ItemValue = _newtableData[d].ItemValue;
+                            }
+                            _nResultData.push(_item);
+                        }
+                    }
+                }
             }
             return _nResultData;
         }
         else {
+            //没选中计算函数中的项 统计TAT箱线图
+            var nDataRow = "";
+            var nDataRowOrder = "";
+            var nDataRowType = "";
+            if (m_nDefineData.DataItem && m_nDefineData.DataItem != "") {
+                nDataRow = m_nDefineData.DataItem;
+                nDataRowOrder = m_nDefineData.DataItemOrder;
+                nDataRowType = m_nDefineData.DataItemType;
+            }
+            if (m_nDefineData.DataRow && m_nDefineData.DataRow != "") {
+                nDataRow = m_nDefineData.DataRow;
+                nDataRowOrder = m_nDefineData.DataRowOrder;
+                nDataRowType = m_nDefineData.DataRowType;
+            }
             //样本模组统计 分模组 样本数量统计 TAT查询 使用明细数据得出TAT
             var _nResultData = new Array();
             for (var i = 0; i < reportarr.TATSet.length; i++) {
                 var _nTatSet = reportarr.TATSet[i];
-                var nDataFields = new Array();
-                var nTATColumn = "";
-                nDataFields.push(_nTatSet.TATHour);
-                if (m_nDefineData.DataItem != undefined && m_nDefineData.DataItem != "") {
-                    nDataFields.push(m_nDefineData.DataItem);
-                }
+                var _tableData;
                 if (reportarr.isTAT) {
+
+                    ////查询函数percentiles
+                    //var _funDatas = [];
+                    //var nFunData = {};
+                    //nFunData.FunType = 101;
+                    //nFunData.FunField = _nTatSet.TATTimer;
+                    //m_nDefineData.DataCol = 1;
+                    //nFunData.FunID = 1;
+                    //_funDatas.push(nFunData);
+                    //var nFunData = {};
+                    //nFunData.FunType = 2;
+                    //nFunData.FunField = _nTatSet.TATTimer;
+                    //m_nDefineData.DataCol2 = 2;
+                    //nFunData.FunID = 2;
+                    //_funDatas.push(nFunData);
+                    ////tat箱线图
+                    ////设置时间范围
+                    //if (reportarr.timeType > 0) {
+                    //    reportarr.XValue = DateComponent.buildReportXName(reportarr);
+                    //}
+                    //if (reportarr.XValue && reportarr.XValue.length > 0) {
+                    //    //时间范围循环
+                    //    for (var x = 0; x < reportarr.XValue.length; x++) {
+                    //        var nDataSelectConditions = [];
+                    //        //tat添加时间最大最小值查询条件
+                    //        if (reportarr.tatMinValue != undefined && reportarr.tatMinValue > 0) {
+                    //            var nDataSelectCondition = {};
+                    //            nDataSelectCondition.DataSelectName = _nTatSet.TATTimer;
+                    //            nDataSelectCondition.DataSelectOption = ">=";
+                    //            nDataSelectCondition.DataSelectValue = reportarr.tatMinValue;
+                    //            nDataSelectConditions.push(nDataSelectCondition);
+                    //        }
+                    //        if (reportarr.tatMaxValue != undefined && reportarr.tatMaxValue > 0) {
+                    //            var nDataSelectCondition = {};
+                    //            nDataSelectCondition.DataSelectName = _nTatSet.TATTimer;
+                    //            nDataSelectCondition.DataSelectOption = "<=";
+                    //            nDataSelectCondition.DataSelectValue = reportarr.tatMaxValue;
+                    //            nDataSelectConditions.push(nDataSelectCondition);
+                    //        }
+                    //        //等于值
+                    //        if (reportarr.XValueCondition == 1) {
+                    //            var nDataSelectCondition = {};
+                    //            nDataSelectCondition.DataSelectName = _nTatSet.TATHour;
+                    //            nDataSelectCondition.DataSelectOption = "=";
+                    //            nDataSelectCondition.DataSelectValue = DateComponent.getDatePart(reportarr.XValue[x], "h");
+                    //            nDataSelectConditions.push(nDataSelectCondition);
+                    //        }
+                    //        else {
+                    //            //时间范围
+                    //            if (x >= reportarr.XValue.length - 1) {
+                    //                continue;
+                    //            }
+                    //            var nDataSelectCondition = {};
+                    //            nDataSelectCondition.DataSelectName = _nTatSet.TATHour;
+                    //            nDataSelectCondition.DataSelectOption = ">=";
+                    //            nDataSelectCondition.DataSelectValue = DateComponent.getDatePart(reportarr.XValue[x], "h");
+                    //            nDataSelectConditions.push(nDataSelectCondition);
+                    //            var nDataSelectCondition = {};
+                    //            nDataSelectCondition.DataSelectName = _nTatSet.TATHour;
+                    //            nDataSelectCondition.DataSelectOption = "<";
+                    //            nDataSelectCondition.DataSelectValue = DateComponent.getDatePart(reportarr.XValue[x + 1], "h");
+                    //            nDataSelectConditions.push(nDataSelectCondition);
+                    //        }
+                    //        _tableData = this.getESData(m_nDefineData, m_nConditionData, _funDatas, reportarr, nDataRow, nDataRowOrder, nDataRowType, 0, nDataSelectConditions);
+
+                    //        //查询最大值最小值请求
+                    //        var _minmaxfunDatas = [];
+                    //        var nFunData = {};
+                    //        nFunData.FunType = 4;//最大值
+                    //        nFunData.FunField = _nTatSet.TATTimer;
+                    //        m_nDefineData.DataCol = 1;
+                    //        nFunData.FunID = 1;
+                    //        _minmaxfunDatas.push(nFunData);
+                    //        var nFunData = {};
+                    //        nFunData.FunType = 5;//最小值
+                    //        nFunData.FunField = _nTatSet.TATTimer;
+                    //        m_nDefineData.DataCol2 = 2;
+                    //        nFunData.FunID = 2;
+                    //        _minmaxfunDatas.push(nFunData);
+
+                    //        var _minmaxtableData = this.getESData(m_nDefineData, m_nConditionData, _minmaxfunDatas, reportarr, nDataRow, nDataRowOrder, nDataRowType, 0, nDataSelectConditions);
+                    //        //-------查询最大值最小值end------------------
+
+                    //        for (var d = 0; d < _tableData.length; d++) {
+                    //            var q1 = _tableData[d].Percentiles[2];
+                    //            var median = _tableData[d].Percentiles[3];
+                    //            var q3 = _tableData[d].Percentiles[4];
+                    //            var minvalue = _tableData[d].Percentiles[0];
+                    //            var maxvalue = _tableData[d].Percentiles[6];
+                    //            for (var m = 0; m < _minmaxtableData.length; m++) {
+                    //                if (_minmaxtableData[m].ItemName == _tableData[d].ItemName) {
+                    //                    minvalue = _minmaxtableData[m].ItemValue;
+                    //                    maxvalue = _minmaxtableData[m].ItemCount;
+                    //                }
+                    //            }
+
+                    //            var bound = 1.5 * (q3 - q1);
+
+                    //            var low = Math.max(minvalue, q1 - bound);
+                    //            var high = Math.min(maxvalue, q3 + bound);
+
+                    //            var _item = {};
+                    //            //样本按仪器分组 样本表的仪器与专业组在同一个字段里
+                    //            if (isInstrumentOrSpecialityclassify) {
+                    //                var _ndata = _tableData[d].ItemName;
+                    //                var instrumentnames = _ndata.split(",");
+                    //                for (var t = 0; t < instrumentnames.length; t++) {
+                    //                    if (instrumentnames[t] != "") {
+                    //                        if (m_nDefineData.DataItem.toLowerCase() == "instrumentname" || m_nDefineData.DataItem.toLowerCase() == "specialityclassifyname") {
+                    //                            if (instrumentnames[t].toLowerCase() == "centralink_receive" || instrumentnames[t].toLowerCase() == "centralink_send") {
+                    //                                continue;
+                    //                            }
+                    //                            _item.ItemName = instrumentnames[t];
+                    //                            _item.XValue = reportarr.XValue[x];
+                    //                        }
+                    //                        else {
+                    //                            _item.ItemName = _nTatSet.TATName;
+                    //                            _item.XValue = instrumentnames[t];
+                    //                        }
+                    //                        if (reportarr.isSampleCount) {
+                    //                            _item.ItemValue = _tableData[d].ItemValue;
+                    //                        }
+                    //                        _item.boxData = [low, q1, median, q3, high];
+                    //                        _nResultData.push(_item);
+                    //                    }
+                    //                }
+                    //            }
+                    //            else {
+                    //                var nDataSelectConditions_1 = nDataSelectConditions.slice(0);
+                    //                //其他正常计算
+                    //                if (m_nDefineData.DataItem != undefined && m_nDefineData.DataItem != "") {
+                    //                    _item.ItemName = _tableData[d].ItemName;
+                    //                    var nDataSelectCondition = {};
+                    //                    nDataSelectCondition.DataSelectName = m_nDefineData.DataItem;
+                    //                    nDataSelectCondition.DataSelectOption = "=";
+                    //                    nDataSelectCondition.DataSelectValue = _tableData[d].ItemName;
+                    //                    nDataSelectConditions_1.push(nDataSelectCondition);
+                    //                }
+                    //                else {
+                    //                    _item.ItemName = _nTatSet.TATName;
+                    //                }
+                    //                _item.XValue = reportarr.XValue[x];
+
+                    //                if (reportarr.isSampleCount) {
+                    //                    _item.ItemValue = _tableData[d].ItemValue;
+                    //                }
+                    //                _item.boxData = [low, q1, median, q3, high];
+
+                    //                var nDataSelectConditions_2 = nDataSelectConditions_1.slice(0);
+                    //                var nDataFields = new Array();
+                    //                nDataFields.push(_nTatSet.TATTimer);
+                    //                var nDataSelectCondition = {};
+                    //                nDataSelectCondition.DataSelectName = _nTatSet.TATTimer;
+                    //                nDataSelectCondition.DataSelectOption = "<";
+                    //                nDataSelectCondition.DataSelectValue = low;
+                    //                nDataSelectCondition.DataSelectAndOr = "or";
+                    //                nDataSelectConditions_2.push(nDataSelectCondition);
+
+                    //                var nDataSelectCondition = {};
+                    //                nDataSelectCondition.DataSelectName = _nTatSet.TATTimer;
+                    //                nDataSelectCondition.DataSelectOption = ">";
+                    //                nDataSelectCondition.DataSelectValue = high;
+                    //                nDataSelectCondition.DataSelectAndOr = "or";
+                    //                nDataSelectConditions_2.push(nDataSelectCondition);
+                    //                var _fieldData1 = this.getESDataByFieldBySelectConditions(m_nDefineData, m_nConditionData, m_nFunData, reportarr, nDataFields, nDataSelectConditions_2);
+                    //                var _fieldData = new Array();
+                    //                for (var f = 0; f < _fieldData1.length; f++) {
+                    //                    _fieldData.push([x, _fieldData1[f][_nTatSet.TATTimer]]);
+                    //                }
+                    //                _item.outliers = _fieldData;
+
+                    //                _nResultData.push(_item);
+                    //            }
+                    //        }
+                    //    }
+
+                    //}
+                    //else {
+                    //    //没有时间范围 直接计算TAT
+                    //}
+
+
+                    var nDataFields = new Array();
+                    var nTATColumn = "";
+                    nDataFields.push(_nTatSet.TATHour);
+                    if (m_nDefineData.DataItem != undefined && m_nDefineData.DataItem != "") {
+                        nDataFields.push(m_nDefineData.DataItem);
+                    }
                     nTATColumn = _nTatSet.TATTimer;
                     nDataFields.push(_nTatSet.TATTimer);
-                }
 
-                var _tableData = this.getESDataByField(m_nDefineData, m_nConditionData, m_nFunData, reportarr, nDataFields, nTATColumn);
-
-                for (var j = 0; j < _tableData.length; j++) {
-                    var _item = {};
-                    //样本按仪器分组 样本表的仪器与专业组在同一个字段里
-                    if (isInstrumentOrSpecialityclassify) {
-                        var _ndata = _tableData[j][m_nDefineData.DataItem];
-                        var instrumentnames = _ndata.split(",");
-                        for (var t = 0; t < instrumentnames.length; t++) {
-                            if (instrumentnames[t] != "") {
-                                if (m_nDefineData.DataItem.toLowerCase() == "instrumentname" || m_nDefineData.DataItem.toLowerCase() == "specialityclassifyname") {
-                                    if (instrumentnames[t].toLowerCase() == "centralink_receive" || instrumentnames[t].toLowerCase() == "centralink_send") {
-                                        continue;
+                    _tableData = this.getESDataByField(m_nDefineData, m_nConditionData, m_nFunData, reportarr, nDataFields, nTATColumn);
+                    for (var j = 0; j < _tableData.length; j++) {
+                        var _item = {};
+                        //样本按仪器分组 样本表的仪器与专业组在同一个字段里
+                        if (isInstrumentOrSpecialityclassify) {
+                            var _ndata = _tableData[j][m_nDefineData.DataItem];
+                            var instrumentnames = _ndata.split(",");
+                            for (var t = 0; t < instrumentnames.length; t++) {
+                                if (instrumentnames[t] != "") {
+                                    if (m_nDefineData.DataItem.toLowerCase() == "instrumentname" || m_nDefineData.DataItem.toLowerCase() == "specialityclassifyname") {
+                                        if (instrumentnames[t].toLowerCase() == "centralink_receive" || instrumentnames[t].toLowerCase() == "centralink_send") {
+                                            continue;
+                                        }
+                                        _item.ItemName = instrumentnames[t];
+                                        _item.XValue = DateComponent.PrefixInteger(_tableData[j][_nTatSet.TATHour], 2);
                                     }
-                                    _item.ItemName = instrumentnames[t];
-                                    _item.XValue = DateComponent.PrefixInteger(_tableData[j][_nTatSet.TATHour], 2);
-                                }
-                                else {
-                                    _item.ItemName = _nTatSet.TATName;
-                                    _item.XValue = instrumentnames[t];
-                                }
-                                if (reportarr.isSampleCount) {
-                                    _item.ItemCount = 1;
-                                    if (reportarr.isTAT) {
-                                        _item.ItemValue = _tableData[j][_nTatSet.TATTimer];
+                                    else {
+                                        _item.ItemName = _nTatSet.TATName;
+                                        _item.XValue = instrumentnames[t];
                                     }
+                                    if (reportarr.isSampleCount) {
+                                        _item.ItemValue = 1;
+                                        _item.ItemCount = _tableData[j][_nTatSet.TATTimer];
+                                    }
+                                    else {
+                                        _item.ItemCount = _tableData[j][_nTatSet.TATTimer];
+                                    }
+                                    _nResultData.push(_item);
                                 }
-                                else {
-                                    _item.ItemCount = _tableData[j][_nTatSet.TATTimer];
-                                }
-                                _nResultData.push(_item);
                             }
+                        }
+                        else {
+                            //其他正常计算
+                            if (m_nDefineData.DataItem != undefined && m_nDefineData.DataItem != "") {
+                                _item.ItemName = _tableData[j][m_nDefineData.DataItem];
+                            }
+                            else {
+                                _item.ItemName = _nTatSet.TATName;
+                            }
+                            _item.XValue = DateComponent.PrefixInteger(_tableData[j][_nTatSet.TATHour], 2);
+
+                            if (reportarr.isSampleCount) {
+                                _item.ItemValue = 1;
+                                _item.ItemCount = _tableData[j][_nTatSet.TATTimer];
+                            }
+                            else {
+                                _item.ItemCount = _tableData[j][_nTatSet.TATTimer];
+                            }
+                            _nResultData.push(_item);
                         }
                     }
-                    else {
-                        //其他正常计算
-                        if (m_nDefineData.DataItem != undefined && m_nDefineData.DataItem != "") {
-                            _item.ItemName = _tableData[j][m_nDefineData.DataItem];
-                        }
-                        else {
-                            _item.ItemName = _nTatSet.TATName;
-                        }
-                        _item.XValue = DateComponent.PrefixInteger(_tableData[j][_nTatSet.TATHour], 2);
-                        if (reportarr.isSampleCount) {
-                            _item.ItemCount = 1;
-                            if (reportarr.isTAT) {
-                                _item.ItemValue = _tableData[j][_nTatSet.TATTimer];
+                }
+                else {
+                    //列转行只选中了计数函数 生成计数新函数
+                    var _funDatas = new Array();
+                    var nFunData = {};
+                    nFunData.FunType = 2;
+                    nFunData.FunField = _nTatSet.TATTimer;
+                    nFunData.FunID = m_nDefineData.DataCol;
+                    _funDatas.push(nFunData);
+                    //预加载条件
+                    var nDataSelectConditions = [];
+                    //统计groupby字段
+                    if (_nTatSet.TATHour) {
+                        m_nDefineData.DataRow = _nTatSet.TATHour;
+                    }
+
+                    _tableData = this.getESData(m_nDefineData, m_nConditionData, _funDatas, reportarr, _nTatSet.TATHour, 0, "", 0, nDataSelectConditions);
+                    for (var j = 0; j < _tableData.length; j++) {
+                        var _item = {};
+                        //样本按仪器分组 样本表的仪器与专业组在同一个字段里
+                        if (isInstrumentOrSpecialityclassify) {
+                            var _ndata = _tableData[j][ItemName];
+                            var instrumentnames = _ndata.split(",");
+                            for (var t = 0; t < instrumentnames.length; t++) {
+                                if (instrumentnames[t] != "") {
+                                    if (m_nDefineData.DataItem.toLowerCase() == "instrumentname" || m_nDefineData.DataItem.toLowerCase() == "specialityclassifyname") {
+                                        if (instrumentnames[t].toLowerCase() == "centralink_receive" || instrumentnames[t].toLowerCase() == "centralink_send") {
+                                            continue;
+                                        }
+                                        _item.ItemName = instrumentnames[t];
+                                        _item.XValue = DateComponent.PrefixInteger(_tableData[j]["XValue"], 2);
+                                    }
+                                    else {
+                                        _item.ItemName = _nTatSet.TATName;
+                                        _item.XValue = instrumentnames[t];
+                                    }
+                                    _item.ItemCount = _tableData[j]["ItemCount"];
+                                    _nResultData.push(_item);
+                                }
                             }
                         }
                         else {
-                            _item.ItemCount = _tableData[j][_nTatSet.TATTimer];
+                            //其他正常计算
+                            if (m_nDefineData.DataItem != undefined && m_nDefineData.DataItem != "") {
+                                _item.ItemName = _tableData[j]["ItemName"];
+                                _item.XValue = DateComponent.PrefixInteger(_tableData[j]["XValue"], 2);
+                            }
+                            else {
+                                _item.ItemName = _nTatSet.TATName;
+                                _item.XValue = DateComponent.PrefixInteger(_tableData[j]["ItemName"], 2);
+                            }
+
+                            _item.ItemCount = _tableData[j]["ItemCount"];
+                            _nResultData.push(_item);
                         }
-                        _nResultData.push(_item);
                     }
                 }
             }
@@ -209,7 +546,19 @@ ESFun.getMyDefineData = function (reportarr) {
         }
     }
     else if (reportarr.isLasSet) {
-        //TAT查询
+        ////模组设置为true时，模组条件拼接
+        //if (reportarr.isLasSet) {
+        //    var nTatLasCodes = new Array();
+        //    for (var l = 0; l < reportarr.LasSet.length; l++) {
+        //        nTatLasCodes.push(reportarr.LasSet[l].StartLas + "-" + reportarr.LasSet[l].EndLas);
+        //    }
+
+        //    var terms = {};
+        //    terms.terms = {};
+        //    terms.terms[this.getFieldByFieldType(reportarr.DataSource, m_nDefineData.DataItem)] = nTatLasCodes;
+        //    Request.query.bool.must.push(terms);
+        //}
+        //模组TAT查询
         var _nResultData = new Array();
         if (m_nFunData.length > 0) {
             var nDataFields = new Array();
@@ -294,6 +643,7 @@ ESFun.getMyDefineData = function (reportarr) {
             }
         }
         else {
+
             //列 没有定义函数，为常规列方式
             if (m_nDefineData.DataItemOrder > 0) {
                 nDataRow = m_nDefineData.DataItem;
@@ -410,6 +760,18 @@ ESFun.getESData = function (m_nDefineData, m_nConditionData, m_nFunData, reporta
             var range = {};
             range.range = {};
             range.range[nDataSelectName] = { "lt": nDataSelectValue };
+            Request.query.bool.must.push(range);
+        }
+        if (nDataSelectOption == ">=") {
+            var range = {};
+            range.range = {};
+            range.range[nDataSelectName] = { "gte": nDataSelectValue };
+            Request.query.bool.must.push(range);
+        }
+        if (nDataSelectOption == "<=") {
+            var range = {};
+            range.range = {};
+            range.range[nDataSelectName] = { "lte": nDataSelectValue };
             Request.query.bool.must.push(range);
         }
         if (nDataSelectOption == "like") {
@@ -608,11 +970,11 @@ ESFun.concatFun = function (originResult, nFunData, reportarr) {
     }
     if (nFunData.FunType == 5) {
         nFunCol = "result_min" + "_" + nFunData.FunField;
-        originResult[nFunCol] = { max: { field: nFunData.FunField} };
+        originResult[nFunCol] = { min: { field: nFunData.FunField} };
     }
     if (nFunData.FunType == 6) {
         nFunCol = "result_avg" + "_" + nFunData.FunField;
-        originResult[nFunCol] = { max: { field: nFunData.FunField} };
+        originResult[nFunCol] = { avg: { field: nFunData.FunField} };
     }
     //第10百分位
     if (nFunData.FunType == 10) {
@@ -639,21 +1001,30 @@ ESFun.concatFun = function (originResult, nFunData, reportarr) {
         nFunCol = "result_per90" + "_" + nFunData.FunField;
         originResult[nFunCol] = { percentiles: { field: nFunData.FunField, percents: [90]} };
     }
+    //percentiles
+    if (nFunData.FunType == 101) {
+        nFunCol = "result_per" + "_" + nFunData.FunField;
+        originResult[nFunCol] = { percentiles: { field: nFunData.FunField} };
+    }
     return nFunCol;
 }
 
 //ES自定义明细数据处理 带一个过滤条件参数    
 ESFun.getMyDataSearchEchartParam = function (reportarr, params, nDataFields, nSearchFieldName, nSearchFieldType, nSearchFieldValue) {
-    var objRequest = new Array();
-    objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
-    objRequest.ParameterNames = ["defineId"];
-    objRequest.ParameterDataTypes = ["int"];
-    objRequest.ParameterValues = [reportarr.CurDefineID];
-    var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
+    //var objRequest = new Array();
+    //objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
+    //objRequest.ParameterNames = ["defineId"];
+    //objRequest.ParameterDataTypes = ["int"];
+    //objRequest.ParameterValues = [reportarr.CurDefineID];
+    //var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
 
-    var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
-    var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
-    var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+    //var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
+    //var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
+    //var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+
+    var m_nDefineData = top.JQGlobal.getDefineData(reportarr.code); //自定义数据列表
+    var m_nFunData = top.JQGlobal.getFunData(m_nDefineData.DataCol, m_nDefineData.DataCol2); //度量函数列表
+    var m_nConditionData = top.JQGlobal.getConditionData(m_nDefineData.DefineID); //度量函数列表
 
     var mustlist = ESFun.getEchartParamsFilter(m_nDefineData, reportarr, params);
     if (nSearchFieldType == "=") {
@@ -666,19 +1037,22 @@ ESFun.getMyDataSearchEchartParam = function (reportarr, params, nDataFields, nSe
     return this.getESDataByFieldAndMust(m_nDefineData, m_nConditionData, m_nFunData, reportarr, nDataFields, mustlist);
 }
 
-
 //ES自定义明细数据处理
 ESFun.getMyDetailDefineData = function (reportarr, params) {
-    var objRequest = new Array();
-    objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
-    objRequest.ParameterNames = ["defineId"];
-    objRequest.ParameterDataTypes = ["int"];
-    objRequest.ParameterValues = [reportarr.CurDefineID];
-    var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
+    //var objRequest = new Array();
+    //objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
+    //objRequest.ParameterNames = ["defineId"];
+    //objRequest.ParameterDataTypes = ["int"];
+    //objRequest.ParameterValues = [reportarr.CurDefineID];
+    //var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
 
-    var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
-    var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
-    var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+    //var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
+    //var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
+    //var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+
+    var m_nDefineData = top.JQGlobal.getDefineData(getMyDefineIDByCode(reportarr.code)); //自定义数据列表
+    var m_nFunData = top.JQGlobal.getFunData(m_nDefineData.DataCol, m_nDefineData.DataCol2); //度量函数列表
+    var m_nConditionData = top.JQGlobal.getConditionData(m_nDefineData.DefineID); //度量函数列表
 
     var mustlist = ESFun.getEchartParamsFilter(m_nDefineData, reportarr, params);
 
@@ -806,16 +1180,21 @@ ESFun.getEchartParamsFilter = function (m_nDefineData, reportarr, params) {
 
 //ES明细使用统计聚合函数
 ESFun.getMyDetailDefineDataByFun = function (reportarr, params, nGroupByFieldName, nGroupByDataType, nFunFieldName, nFunType) {
-    var objRequest = new Array();
-    objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
-    objRequest.ParameterNames = ["defineId"];
-    objRequest.ParameterDataTypes = ["int"];
-    objRequest.ParameterValues = [reportarr.CurDefineID];
-    var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
+    //var objRequest = new Array();
+    //objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
+    //objRequest.ParameterNames = ["defineId"];
+    //objRequest.ParameterDataTypes = ["int"];
+    //objRequest.ParameterValues = [reportarr.CurDefineID];
+    //var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
 
-    var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
-    var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
-    var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+    //var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
+    //var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
+    //var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+
+    var m_nDefineData = top.JQGlobal.getDefineData(getMyDefineIDByCode(reportarr.code)); //自定义数据列表
+    var m_nFunData = top.JQGlobal.getFunData(m_nDefineData.DataCol, m_nDefineData.DataCol2); //度量函数列表
+    var m_nConditionData = top.JQGlobal.getConditionData(m_nDefineData.DefineID); //度量函数列表
+
     reportarr.DataSource = m_nDefineData.DataSource;
 
     var top = window._webconfig.ESReturnCount;
@@ -856,16 +1235,21 @@ ESFun.getMyDetailDefineDataByFun = function (reportarr, params, nGroupByFieldNam
 
 //ES自定义明细数据处理     报表属性、ECHART点击参数、字段名、字段处理类型、需查询字段、TAT计算字段、TAT取小时字段、TAT开始时间、TAT结束时间
 ESFun.getMyDetailDefineDataBySpecialTAT = function (reportarr, params, nFieldName, nDataType, nDataFields, nTATColumn, nTATHour, nStartTime, nEndTime) {
-    var objRequest = new Array();
-    objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
-    objRequest.ParameterNames = ["defineId"];
-    objRequest.ParameterDataTypes = ["int"];
-    objRequest.ParameterValues = [reportarr.CurDefineID];
-    var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
+    //var objRequest = new Array();
+    //objRequest.ProcedureName = "[proc_simplereport_userdefine_config]";
+    //objRequest.ParameterNames = ["defineId"];
+    //objRequest.ParameterDataTypes = ["int"];
+    //objRequest.ParameterValues = [reportarr.CurDefineID];
+    //var objReturn = JQGlobal.SendMessage("DB_CallProcedure", objRequest);
 
-    var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
-    var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
-    var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+    //var m_nDefineData = getJsonStoreFromTable(objReturn.Table0)[0]; //自定义数据列表
+    //var m_nFunData = getJsonStoreFromTable(objReturn.Table1); //度量函数列表
+    //var m_nConditionData = getJsonStoreFromTable(objReturn.Table2); //度量函数列表
+
+    var m_nDefineData = top.JQGlobal.getDefineData(getMyDefineIDByCode(reportarr.code)); //自定义数据列表
+    var m_nFunData = top.JQGlobal.getFunData(m_nDefineData.DataCol, m_nDefineData.DataCol2); //度量函数列表
+    var m_nConditionData = top.JQGlobal.getConditionData(m_nDefineData.DefineID); //度量函数列表
+
     reportarr.DataSource = m_nDefineData.DataSource;
 
     var Request = ESFun.getESDataByFieldRequest(m_nDefineData, m_nConditionData, m_nFunData, reportarr, nDataFields, nTATColumn);
@@ -952,6 +1336,7 @@ ESFun.getESDataByFieldDistinct = function (m_nDefineData, m_nConditionData, m_nF
     //group by  
     Request.aggs.result.terms.field = this.getFieldByFieldType(reportarr.DataSource, nDataField);
 
+    Request.size = 0;
     return ESDBHelper.getMyJsonDataByRequest(Request, reportarr);
 }
 
@@ -986,7 +1371,7 @@ ESFun.getESDataByFieldRequest = function (m_nDefineData, m_nConditionData, m_nFu
     if (nTATColumn != "") {
         var range = {};
         range.range = {};
-        range.range[nTATColumn] = { "gt": 10 };
+        range.range[nTATColumn] = { "gte": 10 };
         Request.query.bool.must.push(range);
     }
     if (reportarr.tatMinValue != undefined && reportarr.tatMinValue > 0) {
@@ -1008,6 +1393,112 @@ ESFun.getESDataByFieldRequest = function (m_nDefineData, m_nConditionData, m_nFu
 
     Request.size = top;
     return Request;
+}
+
+//调用ES获取明细数据 查询指定字段 指定多个查询条件
+ESFun.getESDataByFieldBySelectConditions = function (m_nDefineData, m_nConditionData, m_nFunData, reportarr, nDataFields, nDataSelectConditions) {
+    reportarr.DataSource = m_nDefineData.DataSource;
+    var top = window._webconfig.ESReturnCount;
+    if (reportarr.Top && reportarr.Top > 0) {
+        top = reportarr.Top;
+    }
+    var Request = {};
+    Request.query = {};
+    Request.query.bool = {};
+    Request.query.bool.must = new Array();
+    Request.query.bool.must_not = new Array();
+
+    //or条件
+    var mustbool = {};
+    mustbool.bool = {};
+    mustbool.bool.should = new Array();
+
+    //查询条件
+    this.initESFilterRequest(m_nConditionData, reportarr, Request);
+
+    //must
+    for (var i = 0; i < nDataSelectConditions.length; i++) {
+        var nDataSelectName = nDataSelectConditions[i].DataSelectName;
+        var nDataSelectOption = nDataSelectConditions[i].DataSelectOption;
+        var nDataSelectValue = nDataSelectConditions[i].DataSelectValue;
+        var nDataSelectAndOr = nDataSelectConditions[i].DataSelectAndOr;
+
+        if (nDataSelectOption == "=") {
+            var match = {};
+            match.match = {};
+            match.match[nDataSelectName] = nDataSelectValue;
+            if (nDataSelectAndOr && nDataSelectAndOr == "or") {
+                mustbool.bool.should.push(match);
+            }
+            else {
+                Request.query.bool.must.push(match);
+            }
+        }
+        if (nDataSelectOption == ">") {
+            var range = {};
+            range.range = {};
+            range.range[nDataSelectName] = { "gt": nDataSelectValue };
+            if (nDataSelectAndOr && nDataSelectAndOr == "or") {
+                mustbool.bool.should.push(range);
+            }
+            else {
+                Request.query.bool.must.push(range);
+            }
+        }
+        if (nDataSelectOption == "<") {
+            var range = {};
+            range.range = {};
+            range.range[nDataSelectName] = { "lt": nDataSelectValue };
+            if (nDataSelectAndOr && nDataSelectAndOr == "or") {
+                mustbool.bool.should.push(range);
+            }
+            else {
+                Request.query.bool.must.push(range);
+            }
+        }
+        if (nDataSelectOption == ">=") {
+            var range = {};
+            range.range = {};
+            range.range[nDataSelectName] = { "gte": nDataSelectValue };
+            if (nDataSelectAndOr && nDataSelectAndOr == "or") {
+                mustbool.bool.should.push(range);
+            }
+            else {
+                Request.query.bool.must.push(range);
+            }
+        }
+        if (nDataSelectOption == "<=") {
+            var range = {};
+            range.range = {};
+            range.range[nDataSelectName] = { "lte": nDataSelectValue };
+            if (nDataSelectAndOr && nDataSelectAndOr == "or") {
+                mustbool.bool.should.push(range);
+            }
+            else {
+                Request.query.bool.must.push(range);
+            }
+        }
+        if (nDataSelectOption == "like") {
+            var wildcard = {};
+            wildcard.wildcard = {};
+            wildcard.wildcard[this.getFieldByFieldType(reportarr.DataSource, nDataSelectName)] = "*" + nDataSelectValue.toLowerCase() + "*"; //
+            if (nDataSelectAndOr && nDataSelectAndOr == "or") {
+                mustbool.bool.should.push(wildcard);
+            }
+            else {
+                Request.query.bool.must.push(wildcard);
+            }
+        }
+    }
+    if (mustbool.bool.should.length > 0) {
+        Request.query.bool.must.push(mustbool);
+    }
+
+    //查询字段
+    Request._source = nDataFields;
+
+    Request.size = top;
+    return ESDBHelper.getMyJsonDetailByRequest(Request, reportarr);
 }
 
 //初始化查询条件
@@ -1148,6 +1639,7 @@ ESFun.initESFilterRequest = function (m_nConditionData, reportarr, Request) {
     }
 
 }
+
 //获取字段的传参数关键词 针对某些查询条件string型的字段需添加.keyword而设计  
 //数据源CODE，字段名
 ESFun.getFieldByFieldType = function (dataSourceCode, fieldName) {

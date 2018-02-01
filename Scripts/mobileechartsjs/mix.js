@@ -120,16 +120,21 @@ EchartsMixComponent.Mix001 = function (data, optionatt) {
                 {
                     name: '',
                     type: 'bar'
-                }, 
+                },
                 {
                     type: 'pie',
                     center: ['75%', '20%'],
-                    radius: '25%',
-                    data: pieseriesdata
+                    radius: ['18%', '33%'],
+                    data: pieseriesdata,
+                    label: {
+                        normal: {
+                            position: 'inner',
+                        }
+                    }
                 }
             ]
         },
-            options: barseriesdata
+        options: barseriesdata
     };
 
     return option;
@@ -249,7 +254,7 @@ EchartsMixComponent.Mix002 = function (data, optionatt) {
                 }
             ]
         },
-            options: barseriesdata
+        options: barseriesdata
     };
 
     return option;
@@ -258,7 +263,7 @@ EchartsMixComponent.Mix002 = function (data, optionatt) {
 //年报 时间轴显示饼图
 EchartsMixComponent.Mix003 = function (data, optionatt) {
     _tableData = data;
-    
+
     var legendvalue = new Array();//项目集合
     var seriesdata = new Array();
 
@@ -268,14 +273,14 @@ EchartsMixComponent.Mix003 = function (data, optionatt) {
             legendvalue.push(_tableData[i].ItemName.toString());
         }
     }
-    
+
     for (var m = 0; m < monthList.length; m++) {
         var monthdata = new Array();
-        for(var l=0;l<legendvalue.length;l++) {
+        for (var l = 0; l < legendvalue.length; l++) {
             var legenddata = 0;
             for (var i = 0; i < _tableData.length; i++) {
-                if(monthList[m] == _tableData[i].XValue && _tableData[i].ItemName == legendvalue[l]) {
-                    legenddata +=  _tableData[i].ItemCount;
+                if (monthList[m] == _tableData[i].XValue && _tableData[i].ItemName == legendvalue[l]) {
+                    legenddata += _tableData[i].ItemCount;
                 }
             }
             var legendseries = {};
@@ -290,8 +295,8 @@ EchartsMixComponent.Mix003 = function (data, optionatt) {
         monthseries.series.push(monthseriesdata);
         seriesdata.push(monthseries);
     }
-    
-var option = {
+
+    var option = {
         backgroundColor: optionatt.backgroundColor,
         color: optionatt.color,
         noDataLoadingOption: {
@@ -312,52 +317,52 @@ var option = {
             subtextStyle: {
                 color: optionatt.subtextStyle
             },
-            x:'center',
+            x: 'center',
             subtext: optionatt.SubTitle
         },
-    baseOption: {
-    timeline: {
-        // y: 0,
-        axisType: 'category',
-        // realtime: false,
-        // loop: false,
-        autoPlay: true,
-        // currentIndex: 2,
-        playInterval: 1500,
-        left: 20,
-        right: 20,
-        // controlStyle: {
-        //     position: 'left'
-        // },
-        data: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
-        label: {
-            formatter: function (s) {
-                return s + "月"
-            }
-        }
-    },
-    tooltip: {
-    trigger: 'item',
-    formatter: "{a} <br/>{b} : {c} ({d}%)"
-    },
-      series: [{
-        name: '',
-        type: 'pie',
-        radius: '36%',
-        center: ['50%', '50%'],
-        clockwise: false,
+        baseOption: {
+            timeline: {
+                // y: 0,
+                axisType: 'category',
+                // realtime: false,
+                // loop: false,
+                autoPlay: true,
+                // currentIndex: 2,
+                playInterval: 1500,
+                left: 20,
+                right: 20,
+                // controlStyle: {
+                //     position: 'left'
+                // },
+                data: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+                label: {
+                    formatter: function (s) {
+                        return s + "月"
+                    }
+                }
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: "{a} <br/>{b} : {c} ({d}%)"
+            },
+            series: [{
+                name: '',
+                type: 'pie',
+                radius: '36%',
+                center: ['50%', '50%'],
+                clockwise: false,
 
-        labelLine: {
-          normal: {
-            show: false
-          }
-        }
-      }],
-      color: optionatt.color,
-    },
-    options: seriesdata
-};
+                labelLine: {
+                    normal: {
+                        show: false
+                    }
+                }
+            }],
+            color: optionatt.color,
+        },
+        options: seriesdata
+    };
 
-return option;
+    return option;
 
 }

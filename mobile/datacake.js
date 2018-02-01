@@ -1,12 +1,40 @@
 ﻿
+var generatedCount = 0;
+var codes = new Array();
+var completecodes = new Array();
+
 function MobileDataCakeComponent() {
+    window.nowDate = new Date();
     //获取用户url参数 报表code
     this.nReportCode = GetQueryString("ReportCode");
     this.isFavorite = GetQueryString("isFavorite");
     this.hasShowReport = 0;
-    this._nDefineData = null;
+    this.nDefineData = null;
+    this.zNodes = null;//报表配置
+    this.containerheight = window.innerHeight;//屏幕高度
     this.nHospitalSearch = new Array();
 }
+
+//var n = 0;//存储图片加载到的位置，避免每次都从第一张图片开始遍历
+//window.onscroll = function () {
+//    var echartdivs = $(".echartdiv");
+//    var seeHeight = window.innerHeight;
+//    var scrollTop = document.body.scrollTop || document.documentElement.scrollTop;
+//    //console.log("seeHeight"+seeHeight);
+//    //console.log("scrollTop"+scrollTop);
+//    for (var i = n; i < codes.length; i++) {
+//        if (echartdivs[i].offsetTop < seeHeight + scrollTop) {
+//            //console.log(codes[i] + echartdivs[i].offsetTop);
+//            var reportcode = codes[i];
+//            if (!completecodes.contains(reportcode)) {
+//                setTimeout(function () {
+//                    console.log(reportcode);
+//                    objMobileDataCakeComponent.showReport(reportcode, reportcode);
+//                }, 100)
+//            }
+//        }
+//    }
+//};
 
 MobileDataCakeComponent.prototype.getUserCode = function () {
     var nuserCode = "";
@@ -72,7 +100,7 @@ MobileDataCakeComponent.prototype._doLogin = function (strUserCode, strPassword)
         Request.UserPWD="TCSoft";
     }
 
-    var Return = JQGlobal.SendMessage("GB_UserLogon", Request);
+    var Return = top.JQGlobal.SendMessage("GB_UserLogon", Request);
 
     this._returnObject = { "ConnectSequence": Return.ConnectSequence };
     //复制用户其它信息
@@ -85,7 +113,9 @@ MobileDataCakeComponent.prototype._doLogin = function (strUserCode, strPassword)
     obj.UserName = this._returnObject.UserName;
 //    obj.DoctorID = this._returnObject.DoctorID;
     obj.ConnectSequence = this._returnObject.ConnectSequence;
-    window.UserLoginObj=obj;
+    window.UserLoginObj = obj;
+    window.localStorage.setItem("UserLoginObj", JSON.stringify(obj));
+
     var objString = JSON.stringify(obj); //JSON 数据转化成字符串
     var date = new Date();
     date.setTime(date.getTime() + (12 * 60 * 60 * 1000)); //12个小时失效
@@ -93,40 +123,105 @@ MobileDataCakeComponent.prototype._doLogin = function (strUserCode, strPassword)
 
 }
 
-//获取自定义数据
-MobileDataCakeComponent.prototype.getDefineData = function () {
-    //异步Request设置
-    var objRequest = JQGlobal.NewMessage();
-    objRequest.TableName = window._webconfig.tablecollection[3];
-    objRequest.TableFields = window._webconfig.tablecolumncollection[3];
-    objRequest.OnlyValidRecord = true;
-
-    //异步Return返回
-    var objReturn = JQGlobal.SendMessage("GB_QueryEnumTableContent", objRequest);
-    if (objReturn.ErrorID != 0) {
-        parent.layer.msg(objReturn.ErrorString);
-        return false;
-    }
-
-    this._nDefineData = objReturn.TableContent;
-    if (this._nDefineData == undefined || this._nDefineData == null) {
-        this._nDefineData = new jsTable([window._webconfig.tablecolumncollection[3], window._webconfig.tablecolumntypecollection[3]]);
-    }
-}
 
 MobileDataCakeComponent.prototype.initPage = function () {
+    window.nowDate = new Date();
+    var lblog = $("#lblog").html("");
+    $("#lblog").html("图表加载开始：" + DateComponent.getTimeStampByDate(new Date()));
 
-//    var myDataBriefCookie = $.cookie('myDataBriefCookie');
-     var myDataBriefCookie = window.UserLoginObj;
+    //用户登录信息
+    var UserLoginObj = window.localStorage.getItem("UserLoginObj");
+    var myDataBriefCookie = undefined;
+    if (UserLoginObj) {
+        myDataBriefCookie = JSON.parse(UserLoginObj);
+    }
     if (myDataBriefCookie == undefined || myDataBriefCookie == "") {
         this._doLogin();
     }
-    this.getDefineData();
-    this.getDataSourceData();
-    this.getDataSourceCommentData();
-    this.getSysDictType();
-    this.getSysDictInfo();
+    //自定义报表列表
+    var DefineDataObj = window.localStorage.getItem("DefineData");
+    if (DefineDataObj) {
+        top.JQGlobal._defineData = JSON.parse(DefineDataObj);
+    }
+    if (top.JQGlobal._defineData && top.JQGlobal._defineData.length <= 0) {
+        this.getDefineData();
+    }
+
+    //用户自定义函数列表
+    var FunDataObj = window.localStorage.getItem("FunData");
+    if (FunDataObj) {
+        top.JQGlobal._funData = JSON.parse(FunDataObj);
+    }
+    if (top.JQGlobal._funData && top.JQGlobal._funData.length <= 0) {
+        this.getFunData();
+    }
+
+    //用户自定义报表查询条件列表
+    var ConditionDataObj = window.localStorage.getItem("ConditionData");
+    if (ConditionDataObj) {
+        top.JQGlobal._conditionData = JSON.parse(ConditionDataObj);
+    }
+    if (top.JQGlobal._conditionData && top.JQGlobal._conditionData.length <= 0) {
+        this.getConditionData();
+    }
+
+    //数据源列表
+    var _dataSourceObj = window.localStorage.getItem("SourceData");
+    if (_dataSourceObj) {
+        top.JQGlobal._dataSource = JSON.parse(_dataSourceObj);
+    }
+    if (top.JQGlobal._dataSource && top.JQGlobal._dataSource.length <= 0) {
+        this.getDataSourceData();
+    }
+
+    //数据源字段列表
+    var _dataSourceCommentObj = window.localStorage.getItem("CommentData");
+    if (_dataSourceCommentObj) {
+        top.JQGlobal._dataSourceComment = JSON.parse(_dataSourceCommentObj);
+    }
+    if (top.JQGlobal._dataSourceComment && top.JQGlobal._dataSourceComment.length <= 0) {
+        this.getDataSourceCommentData();
+    }
+
+    //字典集合列表
+    var _dictTypeObj = window.localStorage.getItem("DictType");
+    if (_dictTypeObj) {
+        top.JQGlobal._dictType = JSON.parse(_dictTypeObj);
+    }
+    if (top.JQGlobal._dictType && top.JQGlobal._dictType.length <= 0) {
+        this.getSysDictType();
+    }
+
+    //字典项列表
+    var _dictInfoObj = window.localStorage.getItem("DictInfo");
+    if (_dictInfoObj) {
+        top.JQGlobal._dictInfo = JSON.parse(_dictInfoObj);
+    }
+    if (top.JQGlobal._dictInfo && top.JQGlobal._dictInfo.length <= 0) {
+        this.getSysDictInfo();
+    }
+
+    //报表结构
+    var _zNodesObj = window.localStorage.getItem("zNodes");
+    if (_zNodesObj) {
+        this.zNodes = JSON.parse(_zNodesObj);
+    }
+    if (!this.zNodes) {
+        var reportstr = UniformConfig.readValue("system", "SysReportConfig", "SysReportConfig", "");
+        //this.reportData = []; //缓存报表数据
+        if (reportstr != "") {
+            this.zNodes = Json.fromString(reportstr);
+            window.localStorage.setItem("zNodes", JSON.stringify(this.zNodes));
+        }
+    }
+
+    //用户收藏列表
     this.getUserFavoritePerm();
+
+    //alert("getUserFavoritePerm：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+    //console.log("getUserFavoritePerm：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+    //window.nowDate = new Date();
+
 
     if( window.MyBrowserAPI != undefined){
         var hospitalIds = this.gethospitalIds();
@@ -141,22 +236,13 @@ MobileDataCakeComponent.prototype.initPage = function () {
         }
     }
 
-    var reportstr = UniformConfig.readValue("system", "SysReportConfig", "SysReportConfig", "");
-    this.reportData = []; //缓存报表数据
-    this.zNodes = []; //报表配置
-    if (reportstr != "") {
-        this.zNodes = Json.fromString(reportstr);
-    }
-    
 
-    var mainContainer = document.getElementById("mainContainer");
-    var codes = new Array();
     if(this.isFavorite == "1")
     {
         for (var indexOperateRow = 0; indexOperateRow < this.nUserFavoritePerm.getRecordCount() ; indexOperateRow++) {
             var _code = this.nUserFavoritePerm.getValue(indexOperateRow, "ReportCode");
             var _userid = this.nUserFavoritePerm.getValue(indexOperateRow, "UserID");
-            if(_userid == JQGlobal.getUserID())
+            if(_userid == top.JQGlobal.getUserID())
             {
                 codes.push(_code);
             }
@@ -165,16 +251,22 @@ MobileDataCakeComponent.prototype.initPage = function () {
     else{
         codes = this.nReportCode.split("#");
     }
+    
+    //alert("报表加载开始：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+    console.log("报表加载开始：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+    window.nowDate = new Date();
+
     for (var c = 0; c < codes.length; c++) {
         if (codes[c] == "") {
             continue;
         }
         var isexist = 0;
         var reportdatetype = 0;//报表类型 日、周、月、年等
-        for (var indexRow = 0; indexRow < this._nDefineData.getRecordCount(); indexRow++) {
-            var _nDefineID = this._nDefineData.getValue(indexRow, "DefineID");
-            var _nReportParent1 = this._nDefineData.getValue(indexRow, "ReportParent1");
-            var _nUserID = this._nDefineData.getValue(indexRow, "UserID");
+        for (var indexRow = 0; indexRow < top.JQGlobal._defineData.length ; indexRow++) {
+            var _nDefineData = top.JQGlobal._defineData[indexRow];
+            var _nDefineID = _nDefineData["DefineID"];
+            var _nReportParent1 = _nDefineData["ReportParent1"];
+            var _nUserID = _nDefineData["UserID"];
             var _nDefineCode = getMyDefineCode(_nDefineID);
             if (_nDefineCode == codes[c]) {
                 isexist = 1;
@@ -187,28 +279,24 @@ MobileDataCakeComponent.prototype.initPage = function () {
                 break;
             }
         }
-        if(isexist == 0){
-            for (var i = 0; i < this.zNodes.length; i++) {
-                if (this.zNodes[i].code == codes[c]) {
-                    reportdatetype =  this.zNodes[i].dateType;
-                    isexist = 1;
-                    break;
-                }
-            }
-        }
         if (c > 0) {
             var newHr = document.createElement("hr");
             mainContainer.appendChild(newHr);
         }
-        if(isexist == 1){
+        if (isexist == 1) {
             var newElement = document.createElement("div");
+            newElement.id = codes[c];
+            newElement.className = "echartdiv";
 
             var newElementEchart = document.createElement("div");
-            newElementEchart.id = codes[c];
+            newElementEchart.id = "echartdiv" + codes[c];
+            $(newElementEchart).height(this.containerheight);
+            $(newElementEchart).width('100%');
             newElement.appendChild(newElementEchart);
 
             mainContainer.appendChild(newElement);
-            $(newElement).height('100%');
+
+            $(newElement).height(this.containerheight);
             $(newElement).width('100%');
             var myChart = echarts.init(newElementEchart);
             myChart.dispose();
@@ -218,9 +306,7 @@ MobileDataCakeComponent.prototype.initPage = function () {
             myChart.showLoading({
                 text: '正在努力的读取数据中...',
             });
-            
-            this.initSearchUrlParamDate(reportdatetype,"","");
-            this.showReport(codes[c], codes[c]);
+
             if (this.isFavorite != "1") {
                 var favoriteflag = 0;
                 var favoriteimg = window.MyImagePath + "collect_1.png";
@@ -232,14 +318,72 @@ MobileDataCakeComponent.prototype.initPage = function () {
                         break;
                     }
                 }
-                $(newElement).append('<a style="position:relative;z-index:1000;float:right;right:5px;top:5px;cursor:point;" favoriteflag=' + favoriteflag + ' onclick="objMobileDataCakeComponent.addFavorite(\'' + codes[c] + '\',this)"><img src="' + favoriteimg + '" width="40" height="40"/>');
+                $(newElement).append('<a style="position:relative;z-index:1000;float:right;right:5px;top:5px;cursor:point;" favoriteflag=' + favoriteflag + ' onclick="objMobileDataCakeComponent.addFavorite(\'' + codes[c] + '\',this)"><img src="' + favoriteimg + '" width="30" height="30"/>');
             }
 
             $(newElementEchart).css("position", "absolute");
-
+            //this.initSearchUrlParamDate(reportdatetype, "", "");
+            
+            this.showReport(codes[c], codes[c]);
         }
     }
-    
+
+    var loadCtrl = document.getElementById("loading");
+    loadCtrl.style.display = "none";
+
+    window.nowDate = new Date();
+    var lblog = $("#lblog").html();
+    $("#lblog").html(lblog + "<br/>图表加载结束：" + DateComponent.getTimeStampByDate(new Date()));
+}
+
+MobileDataCakeComponent.prototype.refreshReport = function () {
+    generatedCount = 0;
+    var mainContainer = document.getElementById("mainContainer");
+    $(mainContainer).html("");
+    $(mainContainer).height(this.containerheight * (generatedCount));
+    //mainContainer + hr的总高度 + pullUp本身高度
+    $("#pullUp").css("top", this.containerheight * (generatedCount) + generatedCount * 2 + 51);
+    $("#scroller").height(this.containerheight * (generatedCount) + generatedCount * 2);
+    $("#wrapper").height(this.containerheight * (generatedCount) + generatedCount * 2);
+    this.loadReport();
+}
+
+MobileDataCakeComponent.prototype.loadReport = function () {
+    if (codes.length <= generatedCount) {
+        return;
+    }
+    var value = codes[generatedCount];
+    var THIS = this;
+    var nDefineData = this._nDefineData;
+    var nzNodes = this.zNodes;
+    var mainContainer = document.getElementById("mainContainer");
+    setTimeout(function () {
+        if (value != "") {
+            generatedCount++;
+            var isexist = 0;
+            var reportdatetype = 0;//报表类型 日、周、月、年等
+            for (var indexRow = 0; indexRow < nDefineData.getRecordCount() ; indexRow++) {
+                var _nDefineID = nDefineData.getValue(indexRow, "DefineID");
+                var _nReportParent1 = nDefineData.getValue(indexRow, "ReportParent1");
+                var _nUserID = nDefineData.getValue(indexRow, "UserID");
+                var _nDefineCode = getMyDefineCode(_nDefineID);
+                if (_nDefineCode == value) {
+                    isexist = 1;
+                    for (var i = 0; i < nzNodes.length; i++) {
+                        if (nzNodes[i].code == _nReportParent1) {
+                            reportdatetype = nzNodes[i].dateType;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            if (isexist == 1) {
+                THIS.initSearchUrlParamDate(reportdatetype, "", "");
+                THIS.showReport(value, value);
+            }
+        }
+    }, 10);
 }
 
 MobileDataCakeComponent.prototype.addFavorite = function(reportcode, obj)
@@ -255,17 +399,17 @@ MobileDataCakeComponent.prototype.addFavorite = function(reportcode, obj)
     {
         var nRecNo = _nUserFavoritePermNewData.addRecord();
         _nUserFavoritePermNewData.setValue(nRecNo, "ReportCode", reportcode);
-        _nUserFavoritePermNewData.setValue(nRecNo, "UserID", JQGlobal.getUserID());
+        _nUserFavoritePermNewData.setValue(nRecNo, "UserID", top.JQGlobal.getUserID());
         _nUserFavoritePermNewData.setValue(nRecNo, "OrderIndex", _OrderIndex);
         _nUserFavoritePermNewData.setValue(nRecNo, "ChangeState", 1);
         
         //异步Request提交
-        var objRequest = JQGlobal.NewMessage();
+        var objRequest = top.JQGlobal.NewMessage();
         objRequest.TableName = window._webconfig.tablecollection[12];
         objRequest.TableUpdate = _nUserFavoritePermNewData;
 
         //异步返回
-        var objReturn = JQGlobal.SendMessage("GB_UpdateBasicTable", objRequest);
+        var objReturn = top.JQGlobal.SendMessage("GB_UpdateBasicTable", objRequest);
         if (objReturn.ErrorID != 0) {
             layer.msg(objReturn.ErrorString);
             return false;
@@ -278,16 +422,16 @@ MobileDataCakeComponent.prototype.addFavorite = function(reportcode, obj)
     {
         var nRecNo = _nUserFavoritePermNewData.addRecord();
         _nUserFavoritePermNewData.setValue(nRecNo, "ReportCode", reportcode);
-        _nUserFavoritePermNewData.setValue(nRecNo, "UserID", JQGlobal.getUserID());
+        _nUserFavoritePermNewData.setValue(nRecNo, "UserID", top.JQGlobal.getUserID());
         _nUserFavoritePermNewData.setValue(nRecNo, "ChangeState", 3);
 
         //异步Request提交
-        var objRequest = JQGlobal.NewMessage();
+        var objRequest = top.JQGlobal.NewMessage();
         objRequest.TableName = window._webconfig.tablecollection[12];
         objRequest.TableUpdate = _nUserFavoritePermNewData;
 
         //异步返回
-        var objReturn = JQGlobal.SendMessage("GB_UpdateBasicTable", objRequest);
+        var objReturn = top.JQGlobal.SendMessage("GB_UpdateBasicTable", objRequest);
         if (objReturn.ErrorID != 0) {
             layer.msg(objReturn.ErrorString);
             return false;
@@ -302,10 +446,10 @@ MobileDataCakeComponent.prototype.addFavorite = function(reportcode, obj)
 //查询用户收藏的报表
 MobileDataCakeComponent.prototype.getUserFavoritePerm = function () {
     //异步Request设置
-    var objRequest = JQGlobal.NewMessage();
+    var objRequest = top.JQGlobal.NewMessage();
     objRequest.TableName = window._webconfig.tablecollection[12];
     objRequest.TableFields = window._webconfig.tablecolumncollection[12];
-    var objReturn = JQGlobal.SendMessage("GB_QueryBasicTableContent", objRequest);
+    var objReturn = top.JQGlobal.SendMessage("GB_QueryBasicTableContent", objRequest);
     if (objReturn.ErrorID != 0) {
         parent.layer.msg(objReturn.ErrorString);
         return null;
@@ -322,9 +466,35 @@ MobileDataCakeComponent.prototype.getUserFavoritePerm = function () {
 }
 
 MobileDataCakeComponent.prototype.showReport = function (reportcode, showelementid) {
+    var reportdatetype = 0;//报表类型 日、周、月、年等
+    for (var indexRow = 0; indexRow < top.JQGlobal._defineData.length ; indexRow++) {
+        var _nDefineData = top.JQGlobal._defineData[indexRow];
+        var _nDefineID = _nDefineData["DefineID"];
+        var _nReportParent1 = _nDefineData["ReportParent1"];
+        var _nUserID = _nDefineData["UserID"];
+        var _nDefineCode = getMyDefineCode(_nDefineID);
+        if (_nDefineCode == reportcode) {
+            isexist = 1;
+            for (var i = 0; i < this.zNodes.length; i++) {
+                if (this.zNodes[i].code == _nReportParent1) {
+                    reportdatetype = this.zNodes[i].dateType;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    this.initSearchUrlParamDate(reportdatetype, "", "");
+
     //获取单个报表的配置
     var reportstr = UniformConfig.readValue("system", "ReportConfig", reportcode, "");
     if (reportstr != "") {
+        //alert("报表加载开始：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+        console.log(reportcode + "报表加载开始：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+        window.nowDate = new Date();
+
+        completecodes.push(reportcode);
+
         var reportarr = Json.fromString(reportstr);
         if (isMyDefineCode(reportarr.code)) {
             reportarr.CurDefineID = getMyDefineIDByCode(reportarr.code);
@@ -333,19 +503,97 @@ MobileDataCakeComponent.prototype.showReport = function (reportcode, showelement
         reportarr["HospitalSearchWhere"] = this.nHospitalSearch;
         reportarr["ReagentTypeSearchWhere"] = ["primary","reagent"];
         EchartsTran.showReport(reportarr);
+
+
+
+        //alert("报表加载完成：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+        console.log(reportcode + "报表加载完成：" + DateComponent.GetDateDiff(window.nowDate, new Date()));
+        window.nowDate = new Date();
     }
+
 }
+
+//获取自定义数据
+MobileDataCakeComponent.prototype.getDefineData = function () {
+    //异步Request设置
+    var objRequest = top.JQGlobal.NewMessage();
+    objRequest.TableName = window._webconfig.tablecollection[3];
+    objRequest.TableFields = window._webconfig.tablecolumncollection[3];
+    objRequest.OnlyValidRecord = true;
+
+    //异步Return返回
+    var objReturn = top.JQGlobal.SendMessage("GB_QueryEnumTableContent", objRequest);
+    if (objReturn.ErrorID != 0) {
+        parent.layer.msg(objReturn.ErrorString);
+        return false;
+    }
+
+    var _nDefineData = objReturn.TableContent;
+
+    if (_nDefineData == undefined || _nDefineData == null) {
+        _nDefineData = new jsTable([window._webconfig.tablecolumncollection[3], window._webconfig.tablecolumntypecollection[3]]);
+    }
+    top.JQGlobal._defineData = getJsonStoreFromTable(_nDefineData);
+    window.localStorage.setItem("DefineData", JSON.stringify(top.JQGlobal._defineData));
+}
+
+//获取度量函数数据
+MobileDataCakeComponent.prototype.getFunData = function () {
+    //异步Request设置
+    var objRequest = top.JQGlobal.NewMessage();
+    objRequest.TableName = window._webconfig.tablecollection[6];
+    objRequest.TableFields = window._webconfig.tablecolumncollection[6];
+    objRequest.OnlyValidRecord = true;
+
+    //异步Return返回
+    var objReturn = top.JQGlobal.SendMessage("GB_QueryEnumTableContent", objRequest);
+    if (objReturn.ErrorID != 0) {
+        parent.layer.msg(objReturn.ErrorString);
+        return false;
+    }
+
+    this._nFunData = objReturn.TableContent;
+    if (this._nFunData == undefined || this._nFunData == null) {
+        this._nFunData = new jsTable([window._webconfig.tablecolumncollection[6], window._webconfig.tablecolumntypecollection[6]]);
+    }
+    top.JQGlobal._funData = getJsonStoreFromTable(this._nFunData);
+    window.localStorage.setItem("FunData", JSON.stringify(top.JQGlobal._funData));
+}
+
+//获取筛选条件数据
+MobileDataCakeComponent.prototype.getConditionData = function () {
+    //异步Request设置
+    var objRequest = top.JQGlobal.NewMessage();
+    objRequest.TableName = window._webconfig.tablecollection[7];
+    objRequest.TableFields = window._webconfig.tablecolumncollection[7];
+    objRequest.OnlyValidRecord = true;
+
+    //异步Return返回
+    var objReturn = top.JQGlobal.SendMessage("GB_QueryEnumTableContent", objRequest);
+    if (objReturn.ErrorID != 0) {
+        parent.layer.msg(objReturn.ErrorString);
+        return false;
+    }
+
+    this._nConditionData = objReturn.TableContent;
+    if (this._nConditionData == undefined || this._nConditionData == null) {
+        this._nConditionData = new jsTable([window._webconfig.tablecolumncollection[7], window._webconfig.tablecolumntypecollection[7]]);
+    }
+    top.JQGlobal._conditionData = getJsonStoreFromTable(this._nConditionData);
+    window.localStorage.setItem("ConditionData", JSON.stringify(top.JQGlobal._conditionData));
+}
+
 
 //获取数据源
 MobileDataCakeComponent.prototype.getDataSourceData = function () {
     //异步Request设置
-    var objRequest = JQGlobal.NewMessage();
+    var objRequest = top.JQGlobal.NewMessage();
     objRequest.TableName = window._webconfig.tablecollection[4];
     objRequest.TableFields = window._webconfig.tablecolumncollection[4];
     objRequest.OnlyValidRecord = true;
 
     //异步Return返回
-    var objReturn = JQGlobal.SendMessage("GB_QueryEnumTableContent", objRequest);
+    var objReturn = top.JQGlobal.SendMessage("GB_QueryEnumTableContent", objRequest);
     if (objReturn.ErrorID != 0) {
         parent.layer.msg(objReturn.ErrorString);
         return false;
@@ -353,19 +601,20 @@ MobileDataCakeComponent.prototype.getDataSourceData = function () {
 
     this.nSourceData = objReturn.TableContent;
     //缓存数据源列表
-    JQGlobal._dataSource = getJsonStoreFromTable(this.nSourceData);
+    top.JQGlobal._dataSource = getJsonStoreFromTable(this.nSourceData);
+    window.localStorage.setItem("SourceData", JSON.stringify(top.JQGlobal._dataSource));
 }
 //获取数据源字段定义
 MobileDataCakeComponent.prototype.getDataSourceCommentData = function () {
     //异步Request设置
-    var objRequest = JQGlobal.NewMessage();
+    var objRequest = top.JQGlobal.NewMessage();
     objRequest.TableName = window._webconfig.tablecollection[8];
     objRequest.TableFields = window._webconfig.tablecolumncollection[8];
 
     objRequest.OnlyValidRecord = true;
 
     //异步Return返回
-    var objReturn = JQGlobal.SendMessage("GB_QueryEnumTableContent", objRequest);
+    var objReturn = top.JQGlobal.SendMessage("GB_QueryEnumTableContent", objRequest);
     if (objReturn.ErrorID != 0) {
         parent.layer.msg(objReturn.ErrorString);
         return false;
@@ -373,7 +622,8 @@ MobileDataCakeComponent.prototype.getDataSourceCommentData = function () {
 
     this.nCommentData = objReturn.TableContent;
     //缓存数据源字段列表
-    JQGlobal._dataSourceComment = getJsonStoreFromTable(this.nCommentData);
+    top.JQGlobal._dataSourceComment = getJsonStoreFromTable(this.nCommentData);
+    window.localStorage.setItem("CommentData", JSON.stringify(top.JQGlobal._dataSourceComment));
 }
 
 //获取数据字典类型
@@ -405,11 +655,11 @@ MobileDataCakeComponent.prototype.getSysDictType = function () {
     var nFromRecNo = dtFrom.addRecord();
     dtFrom.setValue(nFromRecNo, "TableName", tableName);
 
-    var Request = new JQGlobal.NewMessage();
+    var Request = new top.JQGlobal.NewMessage();
     Request.Select = dtSelect;
     Request.From = dtFrom;
     Request.Where = dtWhere;
-    var Return = JQGlobal.SendMessage("DB_CommonQuery", Request);
+    var Return = top.JQGlobal.SendMessage("DB_CommonQuery", Request);
 
     if (Return.ErrorID != 0) {
         layer.msg(objReturn.ErrorString);
@@ -417,7 +667,8 @@ MobileDataCakeComponent.prototype.getSysDictType = function () {
     }
     this.nDictType = Return.Table0;
     //缓存数据字典类型
-    JQGlobal._dictType = getJsonStoreFromTable(this.nDictType);
+    top.JQGlobal._dictType = getJsonStoreFromTable(this.nDictType);
+    window.localStorage.setItem("DictType", JSON.stringify(top.JQGlobal._dictType));
 
 }
 
@@ -449,11 +700,11 @@ MobileDataCakeComponent.prototype.getSysDictInfo = function () {
     var nFromRecNo = dtFrom.addRecord();
     dtFrom.setValue(nFromRecNo, "TableName", tableName);
 
-    var Request = new JQGlobal.NewMessage();
+    var Request = new top.JQGlobal.NewMessage();
     Request.Select = dtSelect;
     Request.From = dtFrom;
     Request.Where = dtWhere;
-    var Return = JQGlobal.SendMessage("DB_CommonQuery", Request);
+    var Return = top.JQGlobal.SendMessage("DB_CommonQuery", Request);
 
     if (Return.ErrorID != 0) {
         layer.msg(objReturn.ErrorString);
@@ -462,7 +713,8 @@ MobileDataCakeComponent.prototype.getSysDictInfo = function () {
     this.nDictInfo = Return.Table0;
 
     //缓存数据字典值
-    JQGlobal._dictInfo = getJsonStoreFromTable(this.nDictInfo);
+    top.JQGlobal._dictInfo = getJsonStoreFromTable(this.nDictInfo);
+    window.localStorage.setItem("DictInfo", JSON.stringify(top.JQGlobal._dictInfo));
 }
 
 
@@ -477,24 +729,24 @@ MobileDataCakeComponent.prototype.initSearchUrlParamDate = function(reportdatety
         switch(parseInt(reportdatetype))
         {
             case 1:
-                window.nReportStartDate = JQGlobal.getStartDate();
-                window.nShowTitleStartDate = JQGlobal.getStartDate();
+                window.nReportStartDate = top.JQGlobal.getStartDate();
+                window.nShowTitleStartDate = top.JQGlobal.getStartDate();
                 break;
             case 2:
-                window.nReportStartDate = JQGlobal.getWeekStartDate();
-                window.nShowTitleStartDate = JQGlobal.getWeekStartDate();
+                window.nReportStartDate = top.JQGlobal.getWeekStartDate();
+                window.nShowTitleStartDate = top.JQGlobal.getWeekStartDate();
                 break;
             case 3:
-                window.nReportStartDate = JQGlobal.getMonthStartDate();
-                window.nShowTitleStartDate = new Date(JQGlobal.getMonthStartDate()).format("yyyy-MM");
+                window.nReportStartDate = top.JQGlobal.getMonthStartDate();
+                window.nShowTitleStartDate = new Date(top.JQGlobal.getMonthStartDate()).format("yyyy-MM");
                 break;
             case 4:
-                window.nReportStartDate = JQGlobal.getMonthStartDate();
-                window.nShowTitleStartDate = new Date(JQGlobal.getMonthStartDate()).format("yyyy-MM");
+                window.nReportStartDate = top.JQGlobal.getMonthStartDate();
+                window.nShowTitleStartDate = new Date(top.JQGlobal.getMonthStartDate()).format("yyyy-MM");
                 break;
             case 5:
-                window.nReportStartDate = JQGlobal.getYearStartDate();
-                window.nShowTitleStartDate = new Date(JQGlobal.getMonthStartDate()).format("yyyy");
+                window.nReportStartDate = top.JQGlobal.getYearStartDate();
+                window.nShowTitleStartDate = new Date(top.JQGlobal.getMonthStartDate()).format("yyyy");
                 break;
         }
     }
@@ -507,24 +759,24 @@ MobileDataCakeComponent.prototype.initSearchUrlParamDate = function(reportdatety
         switch(parseInt(reportdatetype))
         {
             case 1:
-                window.nReportEndDate = JQGlobal.getEndDate();
-                window.nShowTitleEndDate = JQGlobal.getEndDate();
+                window.nReportEndDate = top.JQGlobal.getEndDate();
+                window.nShowTitleEndDate = top.JQGlobal.getEndDate();
                 break;
             case 2:
-                window.nReportEndDate = JQGlobal.getWeekEndDate();
-                window.nShowTitleEndDate = JQGlobal.getWeekEndDate();
+                window.nReportEndDate = top.JQGlobal.getWeekEndDate();
+                window.nShowTitleEndDate = top.JQGlobal.getWeekEndDate();
                 break;
             case 3:
-                window.nReportEndDate = JQGlobal.getMonthEndDate();
-                window.nShowTitleEndDate = new Date(JQGlobal.getMonthStartDate()).format("yyyy-MM");
+                window.nReportEndDate = top.JQGlobal.getMonthEndDate();
+                window.nShowTitleEndDate = new Date(top.JQGlobal.getMonthStartDate()).format("yyyy-MM");
                 break;
             case 4:
-                window.nReportEndDate = JQGlobal.getMonthEndDate();
-                window.nShowTitleEndDate = new Date(JQGlobal.getMonthStartDate()).format("yyyy-MM");
+                window.nReportEndDate = top.JQGlobal.getMonthEndDate();
+                window.nShowTitleEndDate = new Date(top.JQGlobal.getMonthStartDate()).format("yyyy-MM");
                 break;
             case 5:
-                window.nReportEndDate = JQGlobal.getYearEndDate();
-                window.nShowTitleEndDate = new Date(JQGlobal.getMonthStartDate()).format("yyyy");
+                window.nReportEndDate = top.JQGlobal.getYearEndDate();
+                window.nShowTitleEndDate = new Date(top.JQGlobal.getMonthStartDate()).format("yyyy");
                 break;
         }
     }

@@ -291,3 +291,10 @@ DateComponent.getDateByTimeStamp = function (timestamp) {
     var mseconds = datetime.getMilliseconds();
     return year + "-" + month + "-" + date + " " + hour + ":" + minute + ":" + second + "." + mseconds;
 }
+
+DateComponent.GetDateDiff = function (startDate, endDate) {
+    var startTime = startDate.getTime();
+    var endTime = endDate.getTime();
+    var dates = Math.abs((startTime - endTime));
+    return dates;
+}
