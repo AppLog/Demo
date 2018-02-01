@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script>
+
+        function connectToSwiftWebViewBridge(callback) {
+            if (window.SwiftWebViewBridge) {
+                callback(SwiftWebViewBridge);
+            } else {
+                document.addEventListener('SwiftWebViewBridgeReady',
+                        function () {
+                            callback(SwiftWebViewBridge);
+                        },
+                        false);
+            }
+        }
+
+        connectToSwiftWebViewBridge(function (bridge) {
+            bridge.init(function (message, responseCallback) {
+                responseCallback();
+            });
+        });
+
+
+        window.onload = function () {
+
+
+            if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
+                SwiftWebViewBridge.callSwiftHandler("getUserInfo",
+                        "",
+                        function (responseData) {
+                            alert("login action in iOS start");
+//                    var Request = new Array()
+//                    Request.UserCode = responseData["Name"];
+//                    Request.UserPWD = responseData["Pwd"];
+//
+//                    alert("login action in iOS end");
+//                    this._loginAction(Request);
+
+                        });
+            }
+        }
+
+    </script>
+
+</head>
+<body>
+
+</body>
+</html>
