@@ -121,23 +121,7 @@
     <script src="../Scripts/jquery.min.js" type="text/javascript"></script>
 <script>
 
-    function connectToSwiftWebViewBridge(callback) {
-        if (window.SwiftWebViewBridge) {
-            callback(SwiftWebViewBridge);
-        } else {
-            document.addEventListener('SwiftWebViewBridgeReady',
-                                      function () {
-                                          callback(SwiftWebViewBridge);
-                                      },
-                                      false);
-        }
-    }
 
-    connectToSwiftWebViewBridge(function (bridge) {
-        bridge.init(function (message, responseCallback) {
-            responseCallback();
-        });
-    });
 
 
     var objMobileDataCakeComponent = new MobileDataCakeComponent();

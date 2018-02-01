@@ -36,6 +36,19 @@ function MobileDataCakeComponent() {
 //    }
 //};
 
+
+MobileDataCakeComponent.prototype.connectToSwiftWebViewBridge = function(callback) {
+    if (window.SwiftWebViewBridge) {
+        callback(SwiftWebViewBridge);
+    } else {
+        document.addEventListener('SwiftWebViewBridgeReady',
+            function () {
+                callback(SwiftWebViewBridge);
+            },
+            false);
+    }
+}
+
 MobileDataCakeComponent.prototype.getUserCode = function () {
     var nuserCode = "";
     if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
@@ -150,6 +163,14 @@ MobileDataCakeComponent.prototype.initPage = function () {
     window.nowDate = new Date();
     var lblog = $("#lblog").html("");
     $("#lblog").html("图表加载开始：" + DateComponent.getTimeStampByDate(new Date()));
+
+
+    this.connectToSwiftWebViewBridge(function (bridge) {
+        bridge.init(function (message, responseCallback) {
+            responseCallback();
+        });
+    });
+
 
     //用户登录信息
     var UserLoginObj = window.localStorage.getItem("UserLoginObj");
