@@ -165,13 +165,6 @@ MobileDataCakeComponent.prototype.initPage = function () {
     $("#lblog").html("图表加载开始：" + DateComponent.getTimeStampByDate(new Date()));
 
 
-    this.connectToSwiftWebViewBridge(function (bridge) {
-        bridge.init(function (message, responseCallback) {
-            responseCallback();
-        });
-    });
-
-
     //用户登录信息
     var UserLoginObj = window.localStorage.getItem("UserLoginObj");
     var myDataBriefCookie = undefined;

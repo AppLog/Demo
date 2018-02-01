@@ -125,6 +125,14 @@
 
 
     var objMobileDataCakeComponent = new MobileDataCakeComponent();
+
+
+    objMobileDataCakeComponent.connectToSwiftWebViewBridge(function (bridge) {
+        bridge.init(function (message, responseCallback) {
+            responseCallback();
+        });
+    });
+
     window.MyImagePath = "../Images/";
     window.onload = function () {
         objMobileDataCakeComponent.initPage();
